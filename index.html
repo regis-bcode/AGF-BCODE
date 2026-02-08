@@ -3,350 +3,520 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ciclo de Vendas — BPMN Swimlanes (Blueprint & Playbook)</title>
+  <title>Ciclo de Vendas — Swimlanes (Blueprint & Playbook) v2</title>
   <style>
     :root{
-      --bg:#0b1020;
-      --panel: rgba(255,255,255,.06);
-      --panel2: rgba(255,255,255,.10);
-      --stroke: rgba(255,255,255,.14);
-      --text: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.68);
-      --good: rgba(46, 204, 113, .85);
-      --bad: rgba(231, 76, 60, .85);
-      --warn: rgba(241, 196, 15, .85);
-      --info: rgba(52, 152, 219, .85);
-      --shadow: 0 14px 40px rgba(0,0,0,.35);
+      /* Neutral palette (executivo) */
+      --bg0:#070A12;
+      --bg1:#0B1222;
+      --card:#111A2E;
+      --card2:#0E1628;
+      --stroke:rgba(255,255,255,.10);
+      --stroke2:rgba(255,255,255,.16);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.64);
+
+      /* Accents (restritos) */
+      --accent:#7AA7FF;     /* info */
+      --ok:#43D08A;         /* success */
+      --no:#FF5C6C;         /* fail */
+      --warn:#FFD166;       /* warning */
+      --focus:rgba(122,167,255,.18);
+
+      --shadow: 0 18px 40px rgba(0,0,0,.45);
       --radius: 16px;
-      --laneW: 280px;
-      --nodeW: 280px;
-      --nodeH: 86px;
-      --gapX: 120px;
-      --gapY: 26px;
+      --radius2: 12px;
+
+      /* Layout */
+      --laneLabelW: 240px;
+      --colW: 260px;
+      --rowH: 150px;
+      --gap: 14px;
     }
+
     *{box-sizing:border-box}
+    html,body{height:100%}
     body{
-      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: radial-gradient(1200px 700px at 20% 10%, rgba(76,110,245,.18), transparent 60%),
-                  radial-gradient(1200px 700px at 80% 10%, rgba(0,210,255,.10), transparent 60%),
-                  var(--bg);
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color:var(--text);
-    }
-    header{
-      padding:18px 18px 10px;
-      display:flex; gap:14px; align-items:flex-start; justify-content:space-between;
-      border-bottom: 1px solid var(--stroke);
-      position: sticky; top:0; backdrop-filter: blur(10px);
-      background: rgba(11,16,32,.72);
-      z-index: 10;
-    }
-    .title{
-      display:flex; flex-direction:column; gap:2px;
-    }
-    .title h1{margin:0; font-size:18px; letter-spacing:.2px}
-    .title p{margin:0; font-size:12px; color:var(--muted)}
-    .controls{
-      display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:flex-end;
-      max-width: 900px;
-    }
-    .ctrl{
-      display:flex; gap:8px; align-items:center;
-      background: var(--panel);
-      border:1px solid var(--stroke);
-      border-radius: 999px;
-      padding:8px 10px;
-      box-shadow: var(--shadow);
-    }
-    .ctrl label{font-size:12px; color:var(--muted)}
-    select, input{
-      background: transparent; color:var(--text);
-      border:none; outline:none; font-size:12px;
-    }
-    input{width:180px}
-    button{
-      background: rgba(255,255,255,.10);
-      color: var(--text);
-      border: 1px solid var(--stroke);
-      border-radius: 999px;
-      padding:8px 12px;
-      cursor:pointer;
-    }
-    button:hover{background: rgba(255,255,255,.14)}
-
-    main{
-      display:grid;
-      grid-template-columns: 1fr 360px;
-      gap: 14px;
-      padding: 14px 18px 18px;
-    }
-
-    .board{
-      position:relative;
-      background: var(--panel);
-      border: 1px solid var(--stroke);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
+      background:
+        radial-gradient(900px 500px at 20% 10%, rgba(122,167,255,.12), transparent 60%),
+        radial-gradient(900px 500px at 80% 10%, rgba(67,208,138,.07), transparent 60%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
       overflow:hidden;
-      min-height: 640px;
     }
 
-    .lanes{
-      display:grid;
-      grid-template-columns: var(--laneW) 1fr;
-      min-height: 640px;
-    }
-    .laneLabels{
-      border-right:1px solid var(--stroke);
-      background: rgba(255,255,255,.04);
-    }
-    .laneLabel{
-      height: 160px;
-      padding: 14px 14px;
+    /* Top bar */
+    .topbar{
+      position:sticky; top:0;
+      z-index:50;
+      backdrop-filter: blur(12px);
+      background: rgba(7,10,18,.72);
       border-bottom: 1px solid var(--stroke);
-      display:flex; flex-direction:column; justify-content:center; gap:6px;
     }
-    .laneLabel .name{font-weight:700}
-    .laneLabel .desc{font-size:12px; color:var(--muted); line-height:1.25}
-    .canvasWrap{
-      position:relative;
-      overflow:auto;
+    .topbar-inner{
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 12px 16px;
+      gap: 14px;
     }
-    .canvas{
-      position:relative;
-      width: 1500px;
-      min-height: 640px;
-      padding: 20px;
+    .brand{
+      display:flex; flex-direction:column; gap:2px; min-width: 360px;
     }
-
-    /* Nodes */
-    .node{
-      position:absolute;
-      width: var(--nodeW);
-      height: var(--nodeH);
-      border-radius: 14px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid var(--stroke);
-      box-shadow: 0 10px 22px rgba(0,0,0,.28);
-      padding: 10px 12px;
-      cursor:pointer;
-      display:flex; flex-direction:column; gap:6px;
-      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    .brand .h{
+      font-weight:800; letter-spacing:.2px; font-size:14px;
+      display:flex; align-items:center; gap:10px;
     }
-    .node:hover{transform: translateY(-2px); background: rgba(255,255,255,.10)}
-    .node .top{display:flex; align-items:center; justify-content:space-between; gap:8px}
-    .badge{
-      font-size:11px; padding:3px 8px; border-radius:999px;
+    .chip{
+      font-size:11px;
+      padding: 3px 10px;
+      border-radius:999px;
       border:1px solid var(--stroke);
       color:var(--muted);
       background: rgba(255,255,255,.05);
       white-space:nowrap;
     }
-    .node .name{font-weight:750; font-size:13px; line-height:1.15}
-    .node .meta{font-size:12px; color:var(--muted); display:flex; gap:10px; flex-wrap:wrap}
-    .pill{
-      font-size:11px; padding:3px 8px; border-radius:999px; border:1px solid var(--stroke);
-    }
+    .brand .p{font-size:12px; color:var(--muted); line-height:1.2}
 
-    /* Status coloring */
-    .status-NEUTRO{outline: 0}
-    .status-EM_ANDAMENTO{border-color: rgba(52,152,219,.55); box-shadow: 0 10px 22px rgba(52,152,219,.18)}
-    .status-CONCLUIDO{border-color: rgba(46,204,113,.55); box-shadow: 0 10px 22px rgba(46,204,113,.18)}
-    .status-BLOQUEADO{border-color: rgba(241,196,15,.55); box-shadow: 0 10px 22px rgba(241,196,15,.18)}
-    .status-ENCERRADO{border-color: rgba(231,76,60,.55); box-shadow: 0 10px 22px rgba(231,76,60,.18); opacity:.85}
-
-    /* Right panel */
-    .side{
-      background: var(--panel);
-      border: 1px solid var(--stroke);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
+    .controls{
+      display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:flex-end;
     }
-    .sideHeader{
-      padding: 12px 12px 10px;
-      border-bottom:1px solid var(--stroke);
-      display:flex; flex-direction:column; gap:6px;
+    .ctrl{
+      display:flex; align-items:center; gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.05);
     }
-    .sideHeader .h{font-weight:800}
-    .sideHeader .s{font-size:12px; color:var(--muted)}
-    .sideBody{padding: 12px}
-    .kv{display:grid; grid-template-columns: 120px 1fr; gap:8px 10px; font-size:12px}
-    .k{color:var(--muted)}
-    .v{color:var(--text)}
-    .sep{height:1px; background: var(--stroke); margin:12px 0}
-    .log{
-      display:flex; flex-direction:column; gap:8px;
+    .ctrl label{font-size:12px; color:var(--muted)}
+    select,input{
+      background: transparent;
+      color:var(--text);
+      border:none; outline:none;
       font-size:12px;
-      max-height: 260px;
-      overflow:auto;
-      padding-right:6px;
     }
-    .logItem{
+    input{width: 180px}
+    button{
+      border:none;
+      color: var(--text);
+      background: rgba(122,167,255,.14);
+      border:1px solid rgba(122,167,255,.22);
+      padding: 9px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+    }
+    button:hover{background: rgba(122,167,255,.18)}
+    .btn-ghost{
+      background: rgba(255,255,255,.06);
+      border:1px solid var(--stroke);
+    }
+    .btn-ghost:hover{background: rgba(255,255,255,.09)}
+
+    /* App layout */
+    .app{
+      height: calc(100% - 56px);
+      display:grid;
+      grid-template-columns: 1fr 380px;
+      gap: 14px;
+      padding: 14px 16px 16px;
+    }
+
+    /* Board container */
+    .board{
+      position:relative;
+      border-radius: var(--radius);
       border:1px solid var(--stroke);
       background: rgba(255,255,255,.04);
-      border-radius: 12px;
-      padding: 9px 10px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex; flex-direction:column;
+      min-width: 720px;
     }
-    .logItem .t{display:flex; justify-content:space-between; gap:10px; color:var(--muted); font-size:11px}
-    .logItem .m{margin-top:6px; line-height:1.25}
-    .muted{color:var(--muted)}
-    .link{color: rgba(150,190,255,.95); text-decoration:none}
-    .link:hover{text-decoration:underline}
 
-    /* SVG connectors */
-    svg#links{
-      position:absolute; inset:0; pointer-events:none;
+    /* Legend + mini status */
+    .board-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--stroke);
+      background: rgba(255,255,255,.03);
+    }
+    .legend{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      font-size:12px; color:var(--muted);
+    }
+    .dot{width:10px; height:10px; border-radius:999px; display:inline-block; margin-right:6px; vertical-align:middle}
+    .dot.ok{background: var(--ok)}
+    .dot.cur{background: var(--accent)}
+    .dot.no{background: var(--no)}
+    .dot.neu{background: rgba(255,255,255,.35)}
+    .dot.blk{background: var(--warn)}
+    .board-meta{
+      display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end;
+      font-size:12px; color:var(--muted);
+    }
+
+    /* Grid wrapper scroll */
+    .grid-wrap{
+      position:relative;
+      flex:1;
+      overflow:auto;
+      padding: 12px;
+    }
+
+    /* Swimlane grid */
+    .swimgrid{
+      position:relative;
+      display:grid;
+      grid-template-columns: var(--laneLabelW) repeat(14, var(--colW));
+      grid-auto-rows: var(--rowH);
+      gap: var(--gap);
+      align-items:stretch;
+      min-width: calc(var(--laneLabelW) + 14 * var(--colW) + 13 * var(--gap));
+      padding: 6px;
+    }
+
+    /* Column headers */
+    .colhead{
+      position:sticky; top:0;
+      z-index:5;
+      background: rgba(7,10,18,.82);
+      border:1px solid var(--stroke);
+      border-radius: 12px;
+      padding: 10px 10px;
+      font-size:12px;
+      color: var(--muted);
+      display:flex; align-items:center; justify-content:center;
+      text-align:center;
+      box-shadow: 0 10px 20px rgba(0,0,0,.25);
+    }
+    .lanehead{
+      position:sticky; left:0;
+      z-index:6;
+      background: rgba(7,10,18,.82);
+      border:1px solid var(--stroke);
+      border-radius: 12px;
+      padding: 12px 12px;
+      display:flex; flex-direction:column; gap:6px;
+      box-shadow: 0 10px 20px rgba(0,0,0,.25);
+    }
+    .lanehead .name{font-weight:800; font-size:13px}
+    .lanehead .desc{font-size:12px; color:var(--muted); line-height:1.2}
+
+    /* Cell placeholders (for alignment) */
+    .cell{
+      border-radius: 12px;
+      border: 1px dashed rgba(255,255,255,.08);
+      background: rgba(255,255,255,.02);
+    }
+    .cell.empty{border-color: transparent; background: transparent}
+
+    /* Nodes */
+    .node{
+      border-radius: var(--radius2);
+      border: 1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(17,26,46,.90), rgba(14,22,40,.84));
+      box-shadow: 0 14px 28px rgba(0,0,0,.30);
+      padding: 10px 10px;
+      cursor:pointer;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      position:relative;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .node:hover{transform: translateY(-2px); border-color: rgba(255,255,255,.16)}
+    .node .top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
+    .node .title{font-weight:850; font-size:13px; line-height:1.15}
+    .node .tags{display:flex; gap:8px; flex-wrap:wrap; color:var(--muted); font-size:11px}
+    .tag{
+      padding:3px 8px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+      white-space:nowrap;
+    }
+
+    /* Node types */
+    .type-start::before,
+    .type-end::before,
+    .type-gateway::before,
+    .type-task::before{
+      content:"";
+      position:absolute;
+      left:10px; top:10px;
+      width:10px; height:10px;
+      border-radius:999px;
+      opacity:.95;
+    }
+    .type-task::before{background: rgba(255,255,255,.40)}
+    .type-gateway::before{background: rgba(255,255,255,.55)}
+    .type-start::before{background: var(--ok)}
+    .type-end::before{background: var(--no)}
+
+    /* Status */
+    .st-NEUTRO{opacity:.92}
+    .st-CONCLUIDO{border-color: rgba(67,208,138,.40)}
+    .st-EM_ANDAMENTO{border-color: rgba(122,167,255,.50); box-shadow: 0 18px 40px rgba(122,167,255,.18)}
+    .st-BLOQUEADO{border-color: rgba(255,209,102,.55)}
+    .st-ENCERRADO{border-color: rgba(255,92,108,.55); opacity:.82}
+
+    /* Active path glow */
+    .active{
+      outline: 2px solid rgba(122,167,255,.30);
+      box-shadow: 0 20px 44px rgba(122,167,255,.16);
+      background: linear-gradient(180deg, rgba(17,26,46,.96), rgba(14,22,40,.88));
+    }
+
+    /* Connector layer */
+    #links{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      z-index:4;
     }
     .edge{
-      stroke: rgba(255,255,255,.32);
+      stroke: rgba(255,255,255,.22);
       stroke-width: 2;
-      fill: none;
+      fill:none;
     }
+    .edge.active{stroke: rgba(122,167,255,.58); stroke-width: 2.4}
+    .edge.yes{stroke: rgba(67,208,138,.46)}
+    .edge.no{stroke: rgba(255,92,108,.42)}
+    .edge.win{stroke: rgba(67,208,138,.62); stroke-width: 2.6}
+    .edge.lose{stroke: rgba(255,92,108,.62); stroke-width: 2.6}
     .edgeLabel{
       font-size: 11px;
-      fill: rgba(255,255,255,.75);
+      fill: rgba(255,255,255,.78);
+      paint-order: stroke;
+      stroke: rgba(7,10,18,.85);
+      stroke-width: 3px;
     }
-    .edgeYes{stroke: rgba(46,204,113,.55)}
-    .edgeNo{stroke: rgba(231,76,60,.55)}
-    .edgeWin{stroke: rgba(46,204,113,.65)}
-    .edgeLose{stroke: rgba(231,76,60,.65)}
+
+    /* Side panel */
+    .side{
+      border-radius: var(--radius);
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.04);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex; flex-direction:column;
+      min-width: 340px;
+    }
+    .side-head{
+      padding: 12px 12px 10px;
+      border-bottom: 1px solid var(--stroke);
+      background: rgba(255,255,255,.03);
+    }
+    .side-head .h{font-weight:900; font-size:14px}
+    .side-head .s{font-size:12px; color:var(--muted); margin-top:4px; line-height:1.2}
+    .side-body{padding: 12px; overflow:auto}
+    .kv{
+      display:grid;
+      grid-template-columns: 130px 1fr;
+      gap: 8px 10px;
+      font-size:12px;
+    }
+    .k{color:var(--muted)}
+    .v{color:var(--text)}
+    .sep{height:1px; background: var(--stroke); margin: 12px 0}
+    .log{
+      display:flex; flex-direction:column; gap:10px;
+      font-size:12px;
+      max-height: 280px;
+      overflow:auto;
+      padding-right: 6px;
+    }
+    .logItem{
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.03);
+      padding: 10px 10px;
+    }
+    .logItem .t{
+      display:flex; justify-content:space-between; gap:10px;
+      font-size:11px; color:var(--muted);
+    }
+    .logItem .m{margin-top:6px; line-height:1.25}
+    .muted{color:var(--muted)}
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      font-size:11px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+    }
+    .bar{
+      height:6px; width:100%;
+      border-radius:999px;
+      background: rgba(255,255,255,.08);
+      overflow:hidden;
+      margin-top:10px;
+    }
+    .bar > div{
+      height:100%;
+      width: 0%;
+      background: rgba(122,167,255,.62);
+      border-radius:999px;
+    }
+
+    /* Small helpers */
+    .nowrap{white-space:nowrap}
   </style>
 </head>
+
 <body>
-<header>
-  <div class="title">
-    <h1>Ciclo de Vendas — BPMN (Swimlanes) | Blueprint & Playbook</h1>
-    <p>Fluxo clicável e rastreável. Cada etapa tem critério objetivo. Gateways SIM/NÃO encerram ou avançam o ciclo.</p>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="h">
+          Ciclo de Vendas — Swimlanes (Blueprint & Playbook)
+          <span class="chip">v2 • legível • rastreável</span>
+        </div>
+        <div class="p">Grid por etapas + conectores ortogonais. Gateways SIM/NÃO encerram ou avançam o ciclo. Status e log por oportunidade.</div>
+      </div>
+
+      <div class="controls">
+        <div class="ctrl">
+          <label>ICP</label>
+          <select id="fIcp">
+            <option value="ALL">Todos</option>
+            <option value="HOSPITAL">Hospital</option>
+            <option value="OS">OS</option>
+            <option value="CLINICA">Clínica</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <label>Tipo</label>
+          <select id="fTipo">
+            <option value="ALL">Todos</option>
+            <option value="OURO">Ouro</option>
+            <option value="PRATA">Prata</option>
+            <option value="BRONZE">Bronze</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <label>Deal</label>
+          <select id="dealSelect"></select>
+        </div>
+        <div class="ctrl">
+          <label>Buscar</label>
+          <input id="search" placeholder="ex.: Diagnóstico, Decisor, Proposta" />
+        </div>
+        <button class="btn-ghost" id="fit">Fit</button>
+        <button id="reload">Recarregar</button>
+      </div>
+    </div>
   </div>
 
-  <div class="controls">
-    <div class="ctrl">
-      <label>ICP</label>
-      <select id="fIcp">
-        <option value="ALL">Todos</option>
-        <option value="HOSPITAL">Hospital</option>
-        <option value="OS">OS</option>
-        <option value="CLINICA">Clínica</option>
-      </select>
-    </div>
-    <div class="ctrl">
-      <label>Tipo</label>
-      <select id="fTipo">
-        <option value="ALL">Todos</option>
-        <option value="OURO">Ouro</option>
-        <option value="PRATA">Prata</option>
-        <option value="BRONZE">Bronze</option>
-      </select>
-    </div>
-    <div class="ctrl">
-      <label>Deal</label>
-      <select id="dealSelect"></select>
-    </div>
-    <div class="ctrl">
-      <label>Buscar</label>
-      <input id="search" placeholder="ex.: Diagnóstico, Decisor, Proposta..." />
-    </div>
-    <button id="reload">Recarregar</button>
+  <div class="app">
+    <section class="board">
+      <div class="board-head">
+        <div class="legend">
+          <span><span class="dot ok"></span>Concluído</span>
+          <span><span class="dot cur"></span>Em andamento</span>
+          <span><span class="dot neu"></span>Neutro</span>
+          <span><span class="dot blk"></span>Bloqueado</span>
+          <span><span class="dot no"></span>Encerrado</span>
+        </div>
+        <div class="board-meta" id="boardMeta"></div>
+      </div>
+
+      <div class="grid-wrap" id="gridWrap">
+        <svg id="links"></svg>
+        <div class="swimgrid" id="grid"></div>
+      </div>
+    </section>
+
+    <aside class="side">
+      <div class="side-head">
+        <div class="h" id="sideTitle">Selecione uma etapa</div>
+        <div class="s" id="sideSub">Clique em um elemento para ver detalhes, critérios e rastreabilidade.</div>
+        <div class="bar"><div id="slaBar"></div></div>
+      </div>
+      <div class="side-body">
+        <div class="kv" id="kv"></div>
+        <div class="sep"></div>
+        <div class="muted" style="font-size:12px; margin-bottom:8px;">Log / Rastreamento</div>
+        <div class="log" id="log"></div>
+        <div class="sep"></div>
+        <div class="muted" style="font-size:12px;">
+          Integração opcional: status vem do Google Sheets via endpoint JSON (Apps Script).
+        </div>
+      </div>
+    </aside>
   </div>
-</header>
-
-<main>
-  <section class="board">
-    <div class="lanes">
-      <div class="laneLabels">
-        <div class="laneLabel">
-          <div class="name">SDR</div>
-          <div class="desc">Prospecção, classificação ICP/Tipo, contato e qualificação. Protege o funil (GO/NO-GO).</div>
-        </div>
-        <div class="laneLabel">
-          <div class="name">Vendas (Inside / Sênior / Founder)</div>
-          <div class="desc">Diagnóstico, validação com decisor e proposta. Diagnóstico vende; demo confirma.</div>
-        </div>
-        <div class="laneLabel">
-          <div class="name">Cliente</div>
-          <div class="desc">Responde, participa do diagnóstico, valida prioridade e decide (ganhou/perdeu).</div>
-        </div>
-        <div class="laneLabel">
-          <div class="name">Gestão Comercial</div>
-          <div class="desc">Governança do pipeline: motivo de perda, aprendizado e encerramento disciplinado.</div>
-        </div>
-      </div>
-
-      <div class="canvasWrap">
-        <div class="canvas" id="canvas">
-          <svg id="links"></svg>
-          <!-- Nodes injected here -->
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <aside class="side">
-    <div class="sideHeader">
-      <div class="h" id="sideTitle">Selecione uma etapa</div>
-      <div class="s" id="sideSub">Clique em um elemento do fluxo para ver detalhes e rastreabilidade.</div>
-    </div>
-    <div class="sideBody">
-      <div class="kv" id="kv"></div>
-      <div class="sep"></div>
-      <div class="muted" style="font-size:12px; margin-bottom:8px;">Log / Rastreamento</div>
-      <div class="log" id="log"></div>
-      <div class="sep"></div>
-      <div class="muted" style="font-size:12px;">
-        Integração opcional: o status pode vir do Google Sheets via endpoint JSON (Apps Script).
-      </div>
-    </div>
-  </aside>
-</main>
 
 <script>
 /**
- * -----------------------------
- * 1) CONFIGURAÇÃO GOOGLE SHEETS (opcional)
- * -----------------------------
- * Se você criar um Apps Script Web App retornando JSON, informe a URL aqui:
- * const API_URL = "https://script.google.com/macros/s/XXXXX/exec";
- *
- * Se API_URL ficar null, o dashboard roda com dados mock (offline).
+ * Integração opcional (Google Sheets -> Apps Script JSON)
+ * Se tiver endpoint, cole a URL aqui. Se não, usa mock local.
  */
-const API_URL = null; // <- cole sua URL do Apps Script aqui quando estiver pronta
+const API_URL = null; // "https://script.google.com/macros/s/XXXX/exec";
 
 /**
- * -----------------------------
- * 2) METADADOS DO FLUXO BPMN (fixo)
- * -----------------------------
- * Node IDs são a referência de rastreabilidade.
+ * Etapas (colunas). A ordem é governança.
+ * Cada coluna é um “gate” do funil.
+ */
+const columns = [
+  { key:"C1",  title:"Início" },
+  { key:"C2",  title:"Classificação" },
+  { key:"C3",  title:"Contato" },
+  { key:"C4",  title:"Resposta" },
+  { key:"C5",  title:"Qualificação" },
+  { key:"C6",  title:"Fit" },
+  { key:"C7",  title:"Agendar" },
+  { key:"C8",  title:"Diagnóstico" },
+  { key:"C9",  title:"Prioridade" },
+  { key:"C10", title:"Decisor" },
+  { key:"C11", title:"Concorda?" },
+  { key:"C12", title:"Proposta" },
+  { key:"C13", title:"Decisão" },
+  { key:"C14", title:"Término" },
+];
+
+/**
+ * Swimlanes (linhas)
  */
 const lanes = [
-  { id:"SDR", top: 0, height: 160 },
-  { id:"VENDAS", top: 160, height: 160 },
-  { id:"CLIENTE", top: 320, height: 160 },
-  { id:"GESTAO", top: 480, height: 160 },
+  { id:"SDR",    name:"SDR", desc:"Prospecção, ICP/Tipo, contato e qualificação (GO/NO-GO)." },
+  { id:"VENDAS", name:"Vendas (Inside/Sênior/Founder)", desc:"Diagnóstico, validação com decisor e proposta. Diagnóstico vende; demo confirma." },
+  { id:"CLIENTE",name:"Cliente", desc:"Participa, valida prioridade e decide (ganhou/perdeu)." },
+  { id:"GESTAO", name:"Gestão Comercial", desc:"Governança do pipeline: motivo de perda, aprendizado e encerramento." },
 ];
 
-// Posições base (x,y) por nó
-const flowNodes = [
-  { id:"StartEvent_Lead", type:"start", lane:"SDR", name:"Início — Lead Identificado", badge:"Start Event", x:40,  y:24,  defaultStatus:"NEUTRO" },
-  { id:"Task_Classificar", type:"task", lane:"SDR", name:"Classificar ICP e Tipo", badge:"Task", x:420, y:24, defaultStatus:"NEUTRO" },
-  { id:"Task_Contato", type:"task", lane:"SDR", name:"Contato Realizado", badge:"Task", x:780, y:24, defaultStatus:"NEUTRO" },
-  { id:"Gateway_Resposta", type:"gateway", lane:"SDR", name:"Gateway — Houve resposta?", badge:"Exclusive Gateway", x:1140,y:24, defaultStatus:"NEUTRO" },
+/**
+ * Nós BPMN posicionados por (lane, column).
+ * Sem coordenadas absolutas -> layout robusto.
+ */
+const nodes = [
+  { id:"StartEvent_Lead", type:"start",   lane:"SDR",    col:"C1",  title:"Início — Lead Identificado", badge:"Start Event" },
+  { id:"Task_Classificar",type:"task",    lane:"SDR",    col:"C2",  title:"Classificar ICP e Tipo", badge:"Task" },
+  { id:"Task_Contato",    type:"task",    lane:"SDR",    col:"C3",  title:"Contato Realizado", badge:"Task" },
+  { id:"Gateway_Resposta",type:"gateway", lane:"SDR",    col:"C4",  title:"Gateway — Houve resposta?", badge:"Exclusive Gateway" },
 
-  { id:"Task_Qualificacao", type:"task", lane:"SDR", name:"Qualificação SDR", badge:"Task", x:420, y:220, defaultStatus:"NEUTRO" },
-  { id:"Gateway_Fit", type:"gateway", lane:"SDR", name:"Gateway — Fit confirmado?", badge:"Exclusive Gateway", x:780, y:220, defaultStatus:"NEUTRO" },
+  { id:"Task_Qualificacao",type:"task",   lane:"SDR",    col:"C5",  title:"Qualificação SDR", badge:"Task" },
+  { id:"Gateway_Fit",      type:"gateway",lane:"SDR",    col:"C6",  title:"Gateway — Fit confirmado?", badge:"Exclusive Gateway" },
 
-  { id:"Task_Agendar", type:"task", lane:"VENDAS", name:"Agendar Diagnóstico", badge:"Task", x:40,  y:220, defaultStatus:"NEUTRO" },
-  { id:"Task_Diagnostico", type:"task", lane:"VENDAS", name:"Diagnóstico Realizado", badge:"Task", x:1140,y:220, defaultStatus:"NEUTRO" },
-  { id:"Gateway_Prioridade", type:"gateway", lane:"VENDAS", name:"Gateway — Problema é prioritário?", badge:"Exclusive Gateway", x:420, y:416, defaultStatus:"NEUTRO" },
-  { id:"Task_Validar", type:"task", lane:"VENDAS", name:"Validação com Decisor", badge:"Task", x:780, y:416, defaultStatus:"NEUTRO" },
-  { id:"Gateway_Decisor", type:"gateway", lane:"VENDAS", name:"Gateway — Decisor concorda?", badge:"Exclusive Gateway", x:1140,y:416, defaultStatus:"NEUTRO" },
-  { id:"Task_Proposta", type:"task", lane:"VENDAS", name:"Enviar Proposta", badge:"Task", x:40,  y:416, defaultStatus:"NEUTRO" },
+  { id:"Task_Agendar",     type:"task",   lane:"VENDAS", col:"C7",  title:"Agendar Diagnóstico", badge:"Task" },
+  { id:"Task_Diagnostico", type:"task",   lane:"VENDAS", col:"C8",  title:"Diagnóstico Realizado", badge:"Task" },
+  { id:"Gateway_Prioridade",type:"gateway",lane:"VENDAS",col:"C9",  title:"Gateway — Problema é prioritário?", badge:"Exclusive Gateway" },
+  { id:"Task_Validar",     type:"task",   lane:"VENDAS", col:"C10", title:"Validação com Decisor", badge:"Task" },
+  { id:"Gateway_Decisor",  type:"gateway",lane:"VENDAS", col:"C11", title:"Gateway — Decisor concorda?", badge:"Exclusive Gateway" },
+  { id:"Task_Proposta",    type:"task",   lane:"VENDAS", col:"C12", title:"Enviar Proposta", badge:"Task" },
 
-  { id:"Gateway_Decisao", type:"gateway", lane:"CLIENTE", name:"Gateway — Decisão Final", badge:"Exclusive Gateway", x:420, y:612, defaultStatus:"NEUTRO" },
-  { id:"End_Ganhou", type:"end", lane:"CLIENTE", name:"Término — Ganhou", badge:"End Event", x:780, y:612, defaultStatus:"NEUTRO" },
-  { id:"End_Perdeu", type:"end", lane:"GESTAO", name:"Término — Perdeu", badge:"End Event", x:1140,y:612, defaultStatus:"NEUTRO" },
+  { id:"Gateway_Decisao",  type:"gateway",lane:"CLIENTE",col:"C13", title:"Gateway — Decisão Final", badge:"Exclusive Gateway" },
+  { id:"End_Ganhou",       type:"end",    lane:"CLIENTE",col:"C14", title:"Término — Ganhou", badge:"End Event" },
+  { id:"End_Perdeu",       type:"end",    lane:"GESTAO", col:"C14", title:"Término — Perdeu", badge:"End Event" },
 ];
 
-// Conexões SIM/NÃO (edges)
+/**
+ * Conectores (SIM/NÃO e finais).
+ * Ortotonais (Manhattan) serão desenhados via SVG.
+ */
 const edges = [
   { from:"StartEvent_Lead", to:"Task_Classificar", label:"", kind:"" },
   { from:"Task_Classificar", to:"Task_Contato", label:"", kind:"" },
@@ -374,17 +544,18 @@ const edges = [
   { from:"Gateway_Decisao", to:"End_Perdeu", label:"PERDEU", kind:"lose" },
 ];
 
-// Mock de deals + logs (rodar offline)
+/**
+ * Mock (offline)
+ */
 const mock = {
   deals: [
     { deal_id:"D-001", conta:"Hospital São Exemplo", icp:"HOSPITAL", tipo:"OURO", owner:"Founder", status:"EM_ANDAMENTO", current_node:"Task_Diagnostico",
-      last_update:"2026-02-08 10:20", next_action:"Realizar diagnóstico", link:"" },
+      last_update:"2026-02-08 10:20", next_action:"Realizar diagnóstico", sla_days: 2 },
     { deal_id:"D-002", conta:"OS Saúde Regional", icp:"OS", tipo:"PRATA", owner:"Vendas Sênior", status:"EM_ANDAMENTO", current_node:"Task_Qualificacao",
-      last_update:"2026-02-08 09:10", next_action:"Qualificar sponsor corporativo", link:"" },
+      last_update:"2026-02-08 09:10", next_action:"Mapear decisor corporativo", sla_days: 5 },
     { deal_id:"D-003", conta:"Clínica Alpha", icp:"CLINICA", tipo:"OURO", owner:"Inside", status:"EM_ANDAMENTO", current_node:"Task_Proposta",
-      last_update:"2026-02-07 17:30", next_action:"Follow-up proposta", link:"" },
+      last_update:"2026-02-07 17:30", next_action:"Follow-up da proposta", sla_days: 1 },
   ],
-  // log por deal e por node (rastreabilidade)
   logs: [
     { deal_id:"D-001", ts:"2026-02-08 10:20", node_id:"Task_Diagnostico", msg:"Diagnóstico confirmado com sponsor (Qualidade). Coletar impactos e evidências." },
     { deal_id:"D-001", ts:"2026-02-07 15:00", node_id:"Task_Agendar", msg:"Diagnóstico agendado com Qualidade + CCIH." },
@@ -395,203 +566,198 @@ const mock = {
   ],
 };
 
-// Estado atual
 let state = {
   deals: [],
   logs: [],
+  filtered: [],
   selectedDealId: null,
   selectedNodeId: null,
-  filters: { icp:"ALL", tipo:"ALL", q:"" }
+  filters: { icp:"ALL", tipo:"ALL", q:"" },
 };
 
-// Util
-const $ = sel => document.querySelector(sel);
-const canvas = $("#canvas");
-const svg = $("#links");
+const $ = s => document.querySelector(s);
 
-function laneTop(laneId){
-  const lane = lanes.find(l=>l.id===laneId);
-  if(!lane) return 0;
-  return lane.top;
-}
+function laneRowIndex(laneId){ return lanes.findIndex(l=>l.id===laneId); }
+function colIndex(colKey){ return columns.findIndex(c=>c.key===colKey); }
 
-function nodeRect(n){
-  const top = laneTop(n.lane) + n.y;
-  return { x:n.x, y:top, w:280, h:86 };
-}
+function getDeal(){ return state.deals.find(d=>d.deal_id===state.selectedDealId) || null; }
+function getNode(id){ return nodes.find(n=>n.id===id) || null; }
 
-// Build UI
-function renderDealsDropdown(){
-  const sel = $("#dealSelect");
-  sel.innerHTML = "";
-  const deals = state.dealsFiltered ?? state.deals;
-  for(const d of deals){
-    const opt = document.createElement("option");
-    opt.value = d.deal_id;
-    opt.textContent = `${d.deal_id} — ${d.conta}`;
-    sel.appendChild(opt);
-  }
-  state.selectedDealId = deals[0]?.deal_id ?? null;
-  sel.value = state.selectedDealId;
-}
-
-function getDeal(){
-  return state.deals.find(d=>d.deal_id===state.selectedDealId) || null;
-}
-
-function getNode(id){
-  return flowNodes.find(n=>n.id===id) || null;
+function orderOfNode(nodeId){
+  // Define ordem pela coluna; desempate por lane
+  const n = getNode(nodeId);
+  if(!n) return 999;
+  return colIndex(n.col)*10 + laneRowIndex(n.lane);
 }
 
 function statusForNode(deal, nodeId){
-  // lógica simples: nó atual = EM_ANDAMENTO, anteriores = CONCLUIDO, finais se ganhou/perdeu
   if(!deal) return "NEUTRO";
-  if(deal.status === "GANHOU" && nodeId==="End_Ganhou") return "CONCLUIDO";
-  if(deal.status === "PERDEU" && nodeId==="End_Perdeu") return "ENCERRADO";
-
-  const order = flowNodes.map(n=>n.id);
-  const curIdx = order.indexOf(deal.current_node);
-  const idx = order.indexOf(nodeId);
-
-  if(idx === -1 || curIdx === -1) return "NEUTRO";
-  if(idx < curIdx) return "CONCLUIDO";
-  if(idx === curIdx) return "EM_ANDAMENTO";
+  if(deal.status === "GANHOU"){
+    if(nodeId === "End_Ganhou") return "CONCLUIDO";
+  }
+  if(deal.status === "PERDEU"){
+    if(nodeId === "End_Perdeu") return "ENCERRADO";
+  }
+  const cur = orderOfNode(deal.current_node);
+  const idx = orderOfNode(nodeId);
+  if(idx < cur) return "CONCLUIDO";
+  if(idx === cur) return "EM_ANDAMENTO";
   return "NEUTRO";
+}
+
+function isActivePath(deal, edge){
+  // Ativo = conecta algo até o nó atual (inclui borda anterior)
+  if(!deal) return false;
+  const curOrder = orderOfNode(deal.current_node);
+  const a = orderOfNode(edge.from);
+  const b = orderOfNode(edge.to);
+  return (a <= curOrder && b <= curOrder);
 }
 
 function applyFilters(){
   const {icp, tipo, q} = state.filters;
-  const qn = (q||"").toLowerCase().trim();
-  state.dealsFiltered = state.deals.filter(d=>{
+  const qq = (q||"").toLowerCase().trim();
+  state.filtered = state.deals.filter(d=>{
     if(icp !== "ALL" && d.icp !== icp) return false;
     if(tipo !== "ALL" && d.tipo !== tipo) return false;
-    if(qn){
-      const hay = `${d.deal_id} ${d.conta} ${d.owner} ${d.icp} ${d.tipo}`.toLowerCase();
-      if(!hay.includes(qn)) return false;
+    if(qq){
+      const hay = `${d.deal_id} ${d.conta} ${d.owner} ${d.icp} ${d.tipo} ${d.current_node}`.toLowerCase();
+      if(!hay.includes(qq)) return false;
     }
     return true;
   });
 }
 
-function renderNodes(){
-  // clear nodes
-  [...canvas.querySelectorAll(".node")].forEach(n=>n.remove());
+function renderDealSelect(){
+  const sel = $("#dealSelect");
+  sel.innerHTML = "";
+  const list = state.filtered.length ? state.filtered : state.deals;
+  for(const d of list){
+    const opt = document.createElement("option");
+    opt.value = d.deal_id;
+    opt.textContent = `${d.deal_id} — ${d.conta}`;
+    sel.appendChild(opt);
+  }
+  state.selectedDealId = (list[0] && list[0].deal_id) || null;
+  sel.value = state.selectedDealId || "";
+}
+
+function renderBoardMeta(){
+  const d = getDeal();
+  const el = $("#boardMeta");
+  if(!d){ el.innerHTML = ""; return; }
+  el.innerHTML = `
+    <span class="pill"><span class="dot cur" style="width:8px;height:8px"></span><span class="nowrap">${d.deal_id}</span></span>
+    <span class="pill"><span class="nowrap">${d.icp}</span></span>
+    <span class="pill"><span class="nowrap">${d.tipo}</span></span>
+    <span class="pill"><span class="nowrap">Dono: ${d.owner}</span></span>
+    <span class="pill"><span class="nowrap">Atual: ${d.current_node}</span></span>
+  `;
+}
+
+function renderGrid(){
+  const grid = $("#grid");
+  grid.innerHTML = "";
+
+  // Header row (colheads)
+  grid.appendChild(makeCell("cell empty")); // top-left spacer
+  for(const c of columns){
+    const ch = document.createElement("div");
+    ch.className = "colhead";
+    ch.textContent = c.title;
+    grid.appendChild(ch);
+  }
+
+  // Lane rows
+  for(const lane of lanes){
+    const lh = document.createElement("div");
+    lh.className = "lanehead";
+    lh.innerHTML = `<div class="name">${lane.name}</div><div class="desc">${lane.desc}</div>`;
+    grid.appendChild(lh);
+
+    for(const c of columns){
+      const cell = makeCell("cell");
+      cell.dataset.lane = lane.id;
+      cell.dataset.col = c.key;
+      grid.appendChild(cell);
+    }
+  }
+
+  // Place nodes into cells
   const deal = getDeal();
 
-  for(const n of flowNodes){
-    const rect = nodeRect(n);
-    const div = document.createElement("div");
-    div.className = `node status-${statusForNode(deal, n.id)}`;
-    div.style.left = rect.x + "px";
-    div.style.top  = rect.y + "px";
-    div.dataset.nodeId = n.id;
+  for(const n of nodes){
+    const cell = [...grid.querySelectorAll(".cell")].find(x => x.dataset.lane===n.lane && x.dataset.col===n.col);
+    if(!cell) continue;
 
-    const badge = n.badge;
     const st = statusForNode(deal, n.id);
+    const nodeDiv = document.createElement("div");
+    nodeDiv.className = `node type-${n.type} st-${st}`;
+    nodeDiv.dataset.nodeId = n.id;
 
-    div.innerHTML = `
+    const active = deal && (n.id === deal.current_node);
+    if(active) nodeDiv.classList.add("active");
+
+    nodeDiv.innerHTML = `
       <div class="top">
-        <div class="name">${n.name}</div>
-        <span class="badge">${badge}</span>
+        <div class="title">${n.title}</div>
+        <span class="chip">${n.badge}</span>
       </div>
-      <div class="meta">
-        <span class="pill">${n.lane}</span>
-        <span class="pill">${st.replaceAll("_"," ")}</span>
+      <div class="tags">
+        <span class="tag">${n.lane}</span>
+        <span class="tag">${st.replaceAll("_"," ")}</span>
       </div>
     `;
 
-    div.addEventListener("click", ()=>{
+    nodeDiv.addEventListener("click", ()=>{
       state.selectedNodeId = n.id;
-      renderSidePanel();
+      renderSide();
+      highlightNode(n.id);
     });
 
-    canvas.appendChild(div);
+    // Clean placeholder look if empty cell is used
+    cell.style.borderStyle = "solid";
+    cell.style.background = "transparent";
+    cell.innerHTML = "";
+    cell.appendChild(nodeDiv);
   }
-}
 
-function renderEdges(){
-  // Size svg to canvas
-  const w = canvas.clientWidth;
-  const h = canvas.clientHeight;
-  svg.setAttribute("width", w);
-  svg.setAttribute("height", h);
-  svg.innerHTML = "";
-
-  const defs = document.createElementNS("http://www.w3.org/2000/svg","defs");
-  defs.innerHTML = `
-    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
-      <path d="M0,0 L12,6 L0,12 z" fill="rgba(255,255,255,.45)"></path>
-    </marker>
-  `;
-  svg.appendChild(defs);
-
-  for(const e of edges){
-    const a = getNode(e.from), b = getNode(e.to);
-    if(!a||!b) continue;
-    const ra = nodeRect(a), rb = nodeRect(b);
-
-    const x1 = ra.x + ra.w;
-    const y1 = ra.y + ra.h/2;
-    const x2 = rb.x;
-    const y2 = rb.y + rb.h/2;
-
-    // curva suave
-    const dx = Math.max(80, (x2 - x1) / 2);
-    const c1x = x1 + dx;
-    const c1y = y1;
-    const c2x = x2 - dx;
-    const c2y = y2;
-
-    const path = document.createElementNS("http://www.w3.org/2000/svg","path");
-    path.setAttribute("d", `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`);
-    path.setAttribute("class", `edge ${e.kind ? "edge"+cap(e.kind) : ""}`);
-    path.setAttribute("marker-end", "url(#arrow)");
-
-    // cor por tipo
-    if(e.kind==="yes") path.classList.add("edgeYes");
-    if(e.kind==="no") path.classList.add("edgeNo");
-    if(e.kind==="win") path.classList.add("edgeWin");
-    if(e.kind==="lose") path.classList.add("edgeLose");
-
-    svg.appendChild(path);
-
-    if(e.label){
-      const tx = (x1 + x2) / 2;
-      const ty = (y1 + y2) / 2 - 8;
-
-      const text = document.createElementNS("http://www.w3.org/2000/svg","text");
-      text.setAttribute("x", tx);
-      text.setAttribute("y", ty);
-      text.setAttribute("class", "edgeLabel");
-      text.setAttribute("text-anchor","middle");
-      text.textContent = e.label;
-      svg.appendChild(text);
+  // For truly empty cells, soften
+  [...grid.querySelectorAll(".cell")].forEach(c=>{
+    if(!c.querySelector(".node")){
+      c.classList.add("empty");
     }
-  }
+  });
 }
 
-function cap(s){ return s ? s[0].toUpperCase()+s.slice(1) : ""; }
+function makeCell(cls){
+  const d = document.createElement("div");
+  d.className = cls;
+  return d;
+}
 
-function renderSidePanel(){
-  const deal = getDeal();
-  const node = getNode(state.selectedNodeId || deal?.current_node || "StartEvent_Lead");
+function renderSide(){
+  const d = getDeal();
+  const nodeId = state.selectedNodeId || d?.current_node || "StartEvent_Lead";
+  const n = getNode(nodeId);
 
-  $("#sideTitle").textContent = node ? node.name : "Selecione uma etapa";
-  $("#sideSub").textContent = deal ? `Deal ${deal.deal_id} — ${deal.conta}` : "Selecione um deal";
+  $("#sideTitle").textContent = n ? n.title : "Selecione uma etapa";
+  $("#sideSub").textContent = d ? `Deal ${d.deal_id} — ${d.conta}` : "Selecione um deal";
 
   const kv = $("#kv");
   kv.innerHTML = "";
 
+  const st = d ? statusForNode(d, nodeId) : "-";
   const rows = [
-    ["Elemento BPMN", node?.badge || "-"],
-    ["Node ID", node?.id || "-"],
-    ["Swimlane", node?.lane || "-"],
-    ["Status (deal)", deal ? statusForNode(deal, node?.id) : "-"],
-    ["ICP", deal?.icp || "-"],
-    ["Tipo ICP", deal?.tipo || "-"],
-    ["Dono (interno)", deal?.owner || "-"],
-    ["Última atualização", deal?.last_update || "-"],
-    ["Próxima ação", deal?.next_action || "-"],
+    ["Elemento BPMN", n?.badge || "-"],
+    ["Node ID", nodeId || "-"],
+    ["Swimlane", n?.lane || "-"],
+    ["Status (deal)", st],
+    ["ICP", d?.icp || "-"],
+    ["Tipo ICP", d?.tipo || "-"],
+    ["Dono (interno)", d?.owner || "-"],
+    ["Última atualização", d?.last_update || "-"],
+    ["Próxima ação", d?.next_action || "-"],
   ];
 
   for(const [k,v] of rows){
@@ -600,19 +766,25 @@ function renderSidePanel(){
     kv.appendChild(kd); kv.appendChild(vd);
   }
 
-  // log
+  // SLA bar (0..10+ days)
+  const slaDays = (d && typeof d.sla_days==="number") ? d.sla_days : 0;
+  const pct = Math.max(0, Math.min(100, (slaDays/10)*100));
+  $("#slaBar").style.width = pct + "%";
+  $("#slaBar").style.background = slaDays <= 3 ? "rgba(67,208,138,.70)" : (slaDays <= 7 ? "rgba(255,209,102,.70)" : "rgba(255,92,108,.70)");
+
+  // logs for deal + node
   const log = $("#log");
   log.innerHTML = "";
-  if(!deal){ return; }
+  if(!d) return;
 
   const items = state.logs
-    .filter(l => l.deal_id===deal.deal_id && (!node?.id || l.node_id===node.id))
+    .filter(x => x.deal_id===d.deal_id && x.node_id===nodeId)
     .sort((a,b)=> (a.ts>b.ts?-1:1));
 
   if(items.length===0){
     const empty = document.createElement("div");
-    empty.className="muted";
-    empty.textContent="Sem registros para esta etapa (ainda).";
+    empty.className = "muted";
+    empty.textContent = "Sem registros para esta etapa (ainda).";
     log.appendChild(empty);
   }else{
     for(const it of items){
@@ -632,51 +804,159 @@ function escapeHtml(str){
 }
 
 /**
- * -----------------------------
- * 3) DATA LOADING
- * -----------------------------
- * Esperado do endpoint:
- * { deals:[...], logs:[...] }
+ * SVG connectors (orthogonal)
+ */
+function renderEdges(){
+  const wrap = $("#gridWrap");
+  const svg = $("#links");
+  const grid = $("#grid");
+
+  // Fit svg to scroll area
+  const w = grid.scrollWidth + 24;
+  const h = grid.scrollHeight + 24;
+  svg.setAttribute("width", w);
+  svg.setAttribute("height", h);
+  svg.innerHTML = "";
+
+  // defs
+  const defs = document.createElementNS("http://www.w3.org/2000/svg","defs");
+  defs.innerHTML = `
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="rgba(255,255,255,.40)"></path>
+    </marker>
+  `;
+  svg.appendChild(defs);
+
+  const d = getDeal();
+
+  // Build index: nodeId -> element rect (relative to grid)
+  const map = {};
+  for(const n of nodes){
+    const el = grid.querySelector(`[data-node-id="${n.id}"]`);
+    if(!el) continue;
+    const r = el.getBoundingClientRect();
+    const gr = grid.getBoundingClientRect();
+    map[n.id] = {
+      x: (r.left - gr.left) + grid.scrollLeft,
+      y: (r.top  - gr.top ) + grid.scrollTop,
+      w: r.width,
+      h: r.height
+    };
+  }
+
+  const pad = 8;
+
+  edges.forEach(e=>{
+    const a = map[e.from], b = map[e.to];
+    if(!a||!b) return;
+
+    // Start at right middle of source
+    const x1 = a.x + a.w + pad;
+    const y1 = a.y + a.h/2;
+
+    // End at left middle of target
+    const x2 = b.x - pad;
+    const y2 = b.y + b.h/2;
+
+    // Manhattan route: go horizontal then vertical then horizontal
+    const midX = Math.round((x1 + x2) / 2);
+
+    const dPath = `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg","path");
+    path.setAttribute("d", dPath);
+    path.setAttribute("class", `edge ${e.kind||""}`);
+    path.setAttribute("marker-end", "url(#arrow)");
+
+    // Active highlighting
+    if(d && isActivePath(d, e)) path.classList.add("active");
+
+    svg.appendChild(path);
+
+    if(e.label){
+      const tx = midX;
+      const ty = Math.min(y1, y2) - 10;
+      const text = document.createElementNS("http://www.w3.org/2000/svg","text");
+      text.setAttribute("x", tx);
+      text.setAttribute("y", ty);
+      text.setAttribute("class", "edgeLabel");
+      text.setAttribute("text-anchor","middle");
+      text.textContent = e.label;
+      svg.appendChild(text);
+    }
+  });
+}
+
+function highlightNode(nodeId){
+  // side highlight already handled; optional future expansion
+}
+
+/**
+ * Data loading
  */
 async function loadData(){
   if(!API_URL){
     state.deals = mock.deals;
-    state.logs = mock.logs;
+    state.logs  = mock.logs;
     return;
   }
   const r = await fetch(API_URL, { cache:"no-store" });
   const data = await r.json();
   state.deals = data.deals || [];
-  state.logs = data.logs || [];
+  state.logs  = data.logs || [];
 }
 
 function refresh(){
   applyFilters();
-  renderDealsDropdown();
-  renderNodes();
-  renderEdges();
-  const deal = getDeal();
-  state.selectedNodeId = deal?.current_node || "StartEvent_Lead";
-  renderSidePanel();
+  renderDealSelect();
+  renderBoardMeta();
+  renderGrid();
+  const d = getDeal();
+  state.selectedNodeId = d?.current_node || "StartEvent_Lead";
+  renderSide();
+  // draw edges after layout
+  requestAnimationFrame(()=> renderEdges());
 }
 
-function bindUI(){
-  $("#fIcp").addEventListener("change", (e)=>{ state.filters.icp = e.target.value; refresh(); });
-  $("#fTipo").addEventListener("change", (e)=>{ state.filters.tipo = e.target.value; refresh(); });
-  $("#search").addEventListener("input", (e)=>{ state.filters.q = e.target.value; refresh(); });
-  $("#dealSelect").addEventListener("change", (e)=>{ state.selectedDealId = e.target.value; refresh(); });
-  $("#reload").addEventListener("click", async ()=>{ await loadData(); refresh(); });
+function fitToView(){
+  // scroll to keep the current node centered
+  const d = getDeal();
+  if(!d) return;
+  const gridWrap = $("#gridWrap");
+  const grid = $("#grid");
+  const el = grid.querySelector(`[data-node-id="${d.current_node}"]`);
+  if(!el) return;
+  const r = el.getBoundingClientRect();
+  const wr = gridWrap.getBoundingClientRect();
+  const dx = (r.left - wr.left) - (wr.width/2 - r.width/2);
+  const dy = (r.top  - wr.top ) - (wr.height/2 - r.height/2);
+  gridWrap.scrollLeft += dx;
+  gridWrap.scrollTop  += dy;
+}
 
-  // Re-render edges on resize (simple)
-  window.addEventListener("resize", ()=> renderEdges());
+function bind(){
+  $("#fIcp").addEventListener("change", e=>{ state.filters.icp = e.target.value; refresh(); });
+  $("#fTipo").addEventListener("change", e=>{ state.filters.tipo = e.target.value; refresh(); });
+  $("#search").addEventListener("input", e=>{ state.filters.q = e.target.value; refresh(); });
+  $("#dealSelect").addEventListener("change", e=>{ state.selectedDealId = e.target.value; refresh(); });
+  $("#reload").addEventListener("click", async ()=>{ await loadData(); refresh(); });
+  $("#fit").addEventListener("click", ()=>{ fitToView(); });
+
+  // redraw edges on resize / scroll
+  const gridWrap = $("#gridWrap");
+  gridWrap.addEventListener("scroll", ()=>{ requestAnimationFrame(()=> renderEdges()); });
+
+  const ro = new ResizeObserver(()=>{ requestAnimationFrame(()=> renderEdges()); });
+  ro.observe($("#grid"));
+  ro.observe($("#gridWrap"));
 }
 
 (async function init(){
-  bindUI();
+  bind();
   await loadData();
-  // default filters
   state.filters = { icp:"ALL", tipo:"ALL", q:"" };
   refresh();
+  fitToView();
 })();
 </script>
 </body>
