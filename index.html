@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ciclo de Vendas — BPMN Swimlanes (Blueprint & Playbook)</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --panel: rgba(255,255,255,.06);
+      --panel2: rgba(255,255,255,.10);
+      --stroke: rgba(255,255,255,.14);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --good: rgba(46, 204, 113, .85);
+      --bad: rgba(231, 76, 60, .85);
+      --warn: rgba(241, 196, 15, .85);
+      --info: rgba(52, 152, 219, .85);
+      --shadow: 0 14px 40px rgba(0,0,0,.35);
+      --radius: 16px;
+      --laneW: 280px;
+      --nodeW: 280px;
+      --nodeH: 86px;
+      --gapX: 120px;
+      --gapY: 26px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 700px at 20% 10%, rgba(76,110,245,.18), transparent 60%),
+                  radial-gradient(1200px 700px at 80% 10%, rgba(0,210,255,.10), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+    }
+    header{
+      padding:18px 18px 10px;
+      display:flex; gap:14px; align-items:flex-start; justify-content:space-between;
+      border-bottom: 1px solid var(--stroke);
+      position: sticky; top:0; backdrop-filter: blur(10px);
+      background: rgba(11,16,32,.72);
+      z-index: 10;
+    }
+    .title{
+      display:flex; flex-direction:column; gap:2px;
+    }
+    .title h1{margin:0; font-size:18px; letter-spacing:.2px}
+    .title p{margin:0; font-size:12px; color:var(--muted)}
+    .controls{
+      display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:flex-end;
+      max-width: 900px;
+    }
+    .ctrl{
+      display:flex; gap:8px; align-items:center;
+      background: var(--panel);
+      border:1px solid var(--stroke);
+      border-radius: 999px;
+      padding:8px 10px;
+      box-shadow: var(--shadow);
+    }
+    .ctrl label{font-size:12px; color:var(--muted)}
+    select, input{
+      background: transparent; color:var(--text);
+      border:none; outline:none; font-size:12px;
+    }
+    input{width:180px}
+    button{
+      background: rgba(255,255,255,.10);
+      color: var(--text);
+      border: 1px solid var(--stroke);
+      border-radius: 999px;
+      padding:8px 12px;
+      cursor:pointer;
+    }
+    button:hover{background: rgba(255,255,255,.14)}
+
+    main{
+      display:grid;
+      grid-template-columns: 1fr 360px;
+      gap: 14px;
+      padding: 14px 18px 18px;
+    }
+
+    .board{
+      position:relative;
+      background: var(--panel);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      min-height: 640px;
+    }
+
+    .lanes{
+      display:grid;
+      grid-template-columns: var(--laneW) 1fr;
+      min-height: 640px;
+    }
+    .laneLabels{
+      border-right:1px solid var(--stroke);
+      background: rgba(255,255,255,.04);
+    }
+    .laneLabel{
+      height: 160px;
+      padding: 14px 14px;
+      border-bottom: 1px solid var(--stroke);
+      display:flex; flex-direction:column; justify-content:center; gap:6px;
+    }
+    .laneLabel .name{font-weight:700}
+    .laneLabel .desc{font-size:12px; color:var(--muted); line-height:1.25}
+    .canvasWrap{
+      position:relative;
+      overflow:auto;
+    }
+    .canvas{
+      position:relative;
+      width: 1500px;
+      min-height: 640px;
+      padding: 20px;
+    }
+
+    /* Nodes */
+    .node{
+      position:absolute;
+      width: var(--nodeW);
+      height: var(--nodeH);
+      border-radius: 14px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid var(--stroke);
+      box-shadow: 0 10px 22px rgba(0,0,0,.28);
+      padding: 10px 12px;
+      cursor:pointer;
+      display:flex; flex-direction:column; gap:6px;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    }
+    .node:hover{transform: translateY(-2px); background: rgba(255,255,255,.10)}
+    .node .top{display:flex; align-items:center; justify-content:space-between; gap:8px}
+    .badge{
+      font-size:11px; padding:3px 8px; border-radius:999px;
+      border:1px solid var(--stroke);
+      color:var(--muted);
+      background: rgba(255,255,255,.05);
+      white-space:nowrap;
+    }
+    .node .name{font-weight:750; font-size:13px; line-height:1.15}
+    .node .meta{font-size:12px; color:var(--muted); display:flex; gap:10px; flex-wrap:wrap}
+    .pill{
+      font-size:11px; padding:3px 8px; border-radius:999px; border:1px solid var(--stroke);
+    }
+
+    /* Status coloring */
+    .status-NEUTRO{outline: 0}
+    .status-EM_ANDAMENTO{border-color: rgba(52,152,219,.55); box-shadow: 0 10px 22px rgba(52,152,219,.18)}
+    .status-CONCLUIDO{border-color: rgba(46,204,113,.55); box-shadow: 0 10px 22px rgba(46,204,113,.18)}
+    .status-BLOQUEADO{border-color: rgba(241,196,15,.55); box-shadow: 0 10px 22px rgba(241,196,15,.18)}
+    .status-ENCERRADO{border-color: rgba(231,76,60,.55); box-shadow: 0 10px 22px rgba(231,76,60,.18); opacity:.85}
+
+    /* Right panel */
+    .side{
+      background: var(--panel);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .sideHeader{
+      padding: 12px 12px 10px;
+      border-bottom:1px solid var(--stroke);
+      display:flex; flex-direction:column; gap:6px;
+    }
+    .sideHeader .h{font-weight:800}
+    .sideHeader .s{font-size:12px; color:var(--muted)}
+    .sideBody{padding: 12px}
+    .kv{display:grid; grid-template-columns: 120px 1fr; gap:8px 10px; font-size:12px}
+    .k{color:var(--muted)}
+    .v{color:var(--text)}
+    .sep{height:1px; background: var(--stroke); margin:12px 0}
+    .log{
+      display:flex; flex-direction:column; gap:8px;
+      font-size:12px;
+      max-height: 260px;
+      overflow:auto;
+      padding-right:6px;
+    }
+    .logItem{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.04);
+      border-radius: 12px;
+      padding: 9px 10px;
+    }
+    .logItem .t{display:flex; justify-content:space-between; gap:10px; color:var(--muted); font-size:11px}
+    .logItem .m{margin-top:6px; line-height:1.25}
+    .muted{color:var(--muted)}
+    .link{color: rgba(150,190,255,.95); text-decoration:none}
+    .link:hover{text-decoration:underline}
+
+    /* SVG connectors */
+    svg#links{
+      position:absolute; inset:0; pointer-events:none;
+    }
+    .edge{
+      stroke: rgba(255,255,255,.32);
+      stroke-width: 2;
+      fill: none;
+    }
+    .edgeLabel{
+      font-size: 11px;
+      fill: rgba(255,255,255,.75);
+    }
+    .edgeYes{stroke: rgba(46,204,113,.55)}
+    .edgeNo{stroke: rgba(231,76,60,.55)}
+    .edgeWin{stroke: rgba(46,204,113,.65)}
+    .edgeLose{stroke: rgba(231,76,60,.65)}
+  </style>
+</head>
+<body>
+<header>
+  <div class="title">
+    <h1>Ciclo de Vendas — BPMN (Swimlanes) | Blueprint & Playbook</h1>
+    <p>Fluxo clicável e rastreável. Cada etapa tem critério objetivo. Gateways SIM/NÃO encerram ou avançam o ciclo.</p>
+  </div>
+
+  <div class="controls">
+    <div class="ctrl">
+      <label>ICP</label>
+      <select id="fIcp">
+        <option value="ALL">Todos</option>
+        <option value="HOSPITAL">Hospital</option>
+        <option value="OS">OS</option>
+        <option value="CLINICA">Clínica</option>
+      </select>
+    </div>
+    <div class="ctrl">
+      <label>Tipo</label>
+      <select id="fTipo">
+        <option value="ALL">Todos</option>
+        <option value="OURO">Ouro</option>
+        <option value="PRATA">Prata</option>
+        <option value="BRONZE">Bronze</option>
+      </select>
+    </div>
+    <div class="ctrl">
+      <label>Deal</label>
+      <select id="dealSelect"></select>
+    </div>
+    <div class="ctrl">
+      <label>Buscar</label>
+      <input id="search" placeholder="ex.: Diagnóstico, Decisor, Proposta..." />
+    </div>
+    <button id="reload">Recarregar</button>
+  </div>
+</header>
+
+<main>
+  <section class="board">
+    <div class="lanes">
+      <div class="laneLabels">
+        <div class="laneLabel">
+          <div class="name">SDR</div>
+          <div class="desc">Prospecção, classificação ICP/Tipo, contato e qualificação. Protege o funil (GO/NO-GO).</div>
+        </div>
+        <div class="laneLabel">
+          <div class="name">Vendas (Inside / Sênior / Founder)</div>
+          <div class="desc">Diagnóstico, validação com decisor e proposta. Diagnóstico vende; demo confirma.</div>
+        </div>
+        <div class="laneLabel">
+          <div class="name">Cliente</div>
+          <div class="desc">Responde, participa do diagnóstico, valida prioridade e decide (ganhou/perdeu).</div>
+        </div>
+        <div class="laneLabel">
+          <div class="name">Gestão Comercial</div>
+          <div class="desc">Governança do pipeline: motivo de perda, aprendizado e encerramento disciplinado.</div>
+        </div>
+      </div>
+
+      <div class="canvasWrap">
+        <div class="canvas" id="canvas">
+          <svg id="links"></svg>
+          <!-- Nodes injected here -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="side">
+    <div class="sideHeader">
+      <div class="h" id="sideTitle">Selecione uma etapa</div>
+      <div class="s" id="sideSub">Clique em um elemento do fluxo para ver detalhes e rastreabilidade.</div>
+    </div>
+    <div class="sideBody">
+      <div class="kv" id="kv"></div>
+      <div class="sep"></div>
+      <div class="muted" style="font-size:12px; margin-bottom:8px;">Log / Rastreamento</div>
+      <div class="log" id="log"></div>
+      <div class="sep"></div>
+      <div class="muted" style="font-size:12px;">
+        Integração opcional: o status pode vir do Google Sheets via endpoint JSON (Apps Script).
+      </div>
+    </div>
+  </aside>
+</main>
+
+<script>
+/**
+ * -----------------------------
+ * 1) CONFIGURAÇÃO GOOGLE SHEETS (opcional)
+ * -----------------------------
+ * Se você criar um Apps Script Web App retornando JSON, informe a URL aqui:
+ * const API_URL = "https://script.google.com/macros/s/XXXXX/exec";
+ *
+ * Se API_URL ficar null, o dashboard roda com dados mock (offline).
+ */
+const API_URL = null; // <- cole sua URL do Apps Script aqui quando estiver pronta
+
+/**
+ * -----------------------------
+ * 2) METADADOS DO FLUXO BPMN (fixo)
+ * -----------------------------
+ * Node IDs são a referência de rastreabilidade.
+ */
+const lanes = [
+  { id:"SDR", top: 0, height: 160 },
+  { id:"VENDAS", top: 160, height: 160 },
+  { id:"CLIENTE", top: 320, height: 160 },
+  { id:"GESTAO", top: 480, height: 160 },
+];
+
+// Posições base (x,y) por nó
+const flowNodes = [
+  { id:"StartEvent_Lead", type:"start", lane:"SDR", name:"Início — Lead Identificado", badge:"Start Event", x:40,  y:24,  defaultStatus:"NEUTRO" },
+  { id:"Task_Classificar", type:"task", lane:"SDR", name:"Classificar ICP e Tipo", badge:"Task", x:420, y:24, defaultStatus:"NEUTRO" },
+  { id:"Task_Contato", type:"task", lane:"SDR", name:"Contato Realizado", badge:"Task", x:780, y:24, defaultStatus:"NEUTRO" },
+  { id:"Gateway_Resposta", type:"gateway", lane:"SDR", name:"Gateway — Houve resposta?", badge:"Exclusive Gateway", x:1140,y:24, defaultStatus:"NEUTRO" },
+
+  { id:"Task_Qualificacao", type:"task", lane:"SDR", name:"Qualificação SDR", badge:"Task", x:420, y:220, defaultStatus:"NEUTRO" },
+  { id:"Gateway_Fit", type:"gateway", lane:"SDR", name:"Gateway — Fit confirmado?", badge:"Exclusive Gateway", x:780, y:220, defaultStatus:"NEUTRO" },
+
+  { id:"Task_Agendar", type:"task", lane:"VENDAS", name:"Agendar Diagnóstico", badge:"Task", x:40,  y:220, defaultStatus:"NEUTRO" },
+  { id:"Task_Diagnostico", type:"task", lane:"VENDAS", name:"Diagnóstico Realizado", badge:"Task", x:1140,y:220, defaultStatus:"NEUTRO" },
+  { id:"Gateway_Prioridade", type:"gateway", lane:"VENDAS", name:"Gateway — Problema é prioritário?", badge:"Exclusive Gateway", x:420, y:416, defaultStatus:"NEUTRO" },
+  { id:"Task_Validar", type:"task", lane:"VENDAS", name:"Validação com Decisor", badge:"Task", x:780, y:416, defaultStatus:"NEUTRO" },
+  { id:"Gateway_Decisor", type:"gateway", lane:"VENDAS", name:"Gateway — Decisor concorda?", badge:"Exclusive Gateway", x:1140,y:416, defaultStatus:"NEUTRO" },
+  { id:"Task_Proposta", type:"task", lane:"VENDAS", name:"Enviar Proposta", badge:"Task", x:40,  y:416, defaultStatus:"NEUTRO" },
+
+  { id:"Gateway_Decisao", type:"gateway", lane:"CLIENTE", name:"Gateway — Decisão Final", badge:"Exclusive Gateway", x:420, y:612, defaultStatus:"NEUTRO" },
+  { id:"End_Ganhou", type:"end", lane:"CLIENTE", name:"Término — Ganhou", badge:"End Event", x:780, y:612, defaultStatus:"NEUTRO" },
+  { id:"End_Perdeu", type:"end", lane:"GESTAO", name:"Término — Perdeu", badge:"End Event", x:1140,y:612, defaultStatus:"NEUTRO" },
+];
+
+// Conexões SIM/NÃO (edges)
+const edges = [
+  { from:"StartEvent_Lead", to:"Task_Classificar", label:"", kind:"" },
+  { from:"Task_Classificar", to:"Task_Contato", label:"", kind:"" },
+  { from:"Task_Contato", to:"Gateway_Resposta", label:"", kind:"" },
+
+  { from:"Gateway_Resposta", to:"Task_Qualificacao", label:"SIM", kind:"yes" },
+  { from:"Gateway_Resposta", to:"End_Perdeu", label:"NÃO", kind:"no" },
+
+  { from:"Task_Qualificacao", to:"Gateway_Fit", label:"", kind:"" },
+  { from:"Gateway_Fit", to:"Task_Agendar", label:"SIM", kind:"yes" },
+  { from:"Gateway_Fit", to:"End_Perdeu", label:"NÃO", kind:"no" },
+
+  { from:"Task_Agendar", to:"Task_Diagnostico", label:"", kind:"" },
+  { from:"Task_Diagnostico", to:"Gateway_Prioridade", label:"", kind:"" },
+
+  { from:"Gateway_Prioridade", to:"Task_Validar", label:"SIM", kind:"yes" },
+  { from:"Gateway_Prioridade", to:"End_Perdeu", label:"NÃO", kind:"no" },
+
+  { from:"Task_Validar", to:"Gateway_Decisor", label:"", kind:"" },
+  { from:"Gateway_Decisor", to:"Task_Proposta", label:"SIM", kind:"yes" },
+  { from:"Gateway_Decisor", to:"End_Perdeu", label:"NÃO", kind:"no" },
+
+  { from:"Task_Proposta", to:"Gateway_Decisao", label:"", kind:"" },
+  { from:"Gateway_Decisao", to:"End_Ganhou", label:"GANHOU", kind:"win" },
+  { from:"Gateway_Decisao", to:"End_Perdeu", label:"PERDEU", kind:"lose" },
+];
+
+// Mock de deals + logs (rodar offline)
+const mock = {
+  deals: [
+    { deal_id:"D-001", conta:"Hospital São Exemplo", icp:"HOSPITAL", tipo:"OURO", owner:"Founder", status:"EM_ANDAMENTO", current_node:"Task_Diagnostico",
+      last_update:"2026-02-08 10:20", next_action:"Realizar diagnóstico", link:"" },
+    { deal_id:"D-002", conta:"OS Saúde Regional", icp:"OS", tipo:"PRATA", owner:"Vendas Sênior", status:"EM_ANDAMENTO", current_node:"Task_Qualificacao",
+      last_update:"2026-02-08 09:10", next_action:"Qualificar sponsor corporativo", link:"" },
+    { deal_id:"D-003", conta:"Clínica Alpha", icp:"CLINICA", tipo:"OURO", owner:"Inside", status:"EM_ANDAMENTO", current_node:"Task_Proposta",
+      last_update:"2026-02-07 17:30", next_action:"Follow-up proposta", link:"" },
+  ],
+  // log por deal e por node (rastreabilidade)
+  logs: [
+    { deal_id:"D-001", ts:"2026-02-08 10:20", node_id:"Task_Diagnostico", msg:"Diagnóstico confirmado com sponsor (Qualidade). Coletar impactos e evidências." },
+    { deal_id:"D-001", ts:"2026-02-07 15:00", node_id:"Task_Agendar", msg:"Diagnóstico agendado com Qualidade + CCIH." },
+
+    { deal_id:"D-002", ts:"2026-02-08 09:10", node_id:"Task_Qualificacao", msg:"Dor contratual citada, mas sem decisor ainda. Necessário mapear diretoria executiva." },
+
+    { deal_id:"D-003", ts:"2026-02-07 17:30", node_id:"Task_Proposta", msg:"Proposta enviada baseada no diagnóstico operacional. Retorno combinado para 09/02." },
+  ],
+};
+
+// Estado atual
+let state = {
+  deals: [],
+  logs: [],
+  selectedDealId: null,
+  selectedNodeId: null,
+  filters: { icp:"ALL", tipo:"ALL", q:"" }
+};
+
+// Util
+const $ = sel => document.querySelector(sel);
+const canvas = $("#canvas");
+const svg = $("#links");
+
+function laneTop(laneId){
+  const lane = lanes.find(l=>l.id===laneId);
+  if(!lane) return 0;
+  return lane.top;
+}
+
+function nodeRect(n){
+  const top = laneTop(n.lane) + n.y;
+  return { x:n.x, y:top, w:280, h:86 };
+}
+
+// Build UI
+function renderDealsDropdown(){
+  const sel = $("#dealSelect");
+  sel.innerHTML = "";
+  const deals = state.dealsFiltered ?? state.deals;
+  for(const d of deals){
+    const opt = document.createElement("option");
+    opt.value = d.deal_id;
+    opt.textContent = `${d.deal_id} — ${d.conta}`;
+    sel.appendChild(opt);
+  }
+  state.selectedDealId = deals[0]?.deal_id ?? null;
+  sel.value = state.selectedDealId;
+}
+
+function getDeal(){
+  return state.deals.find(d=>d.deal_id===state.selectedDealId) || null;
+}
+
+function getNode(id){
+  return flowNodes.find(n=>n.id===id) || null;
+}
+
+function statusForNode(deal, nodeId){
+  // lógica simples: nó atual = EM_ANDAMENTO, anteriores = CONCLUIDO, finais se ganhou/perdeu
+  if(!deal) return "NEUTRO";
+  if(deal.status === "GANHOU" && nodeId==="End_Ganhou") return "CONCLUIDO";
+  if(deal.status === "PERDEU" && nodeId==="End_Perdeu") return "ENCERRADO";
+
+  const order = flowNodes.map(n=>n.id);
+  const curIdx = order.indexOf(deal.current_node);
+  const idx = order.indexOf(nodeId);
+
+  if(idx === -1 || curIdx === -1) return "NEUTRO";
+  if(idx < curIdx) return "CONCLUIDO";
+  if(idx === curIdx) return "EM_ANDAMENTO";
+  return "NEUTRO";
+}
+
+function applyFilters(){
+  const {icp, tipo, q} = state.filters;
+  const qn = (q||"").toLowerCase().trim();
+  state.dealsFiltered = state.deals.filter(d=>{
+    if(icp !== "ALL" && d.icp !== icp) return false;
+    if(tipo !== "ALL" && d.tipo !== tipo) return false;
+    if(qn){
+      const hay = `${d.deal_id} ${d.conta} ${d.owner} ${d.icp} ${d.tipo}`.toLowerCase();
+      if(!hay.includes(qn)) return false;
+    }
+    return true;
+  });
+}
+
+function renderNodes(){
+  // clear nodes
+  [...canvas.querySelectorAll(".node")].forEach(n=>n.remove());
+  const deal = getDeal();
+
+  for(const n of flowNodes){
+    const rect = nodeRect(n);
+    const div = document.createElement("div");
+    div.className = `node status-${statusForNode(deal, n.id)}`;
+    div.style.left = rect.x + "px";
+    div.style.top  = rect.y + "px";
+    div.dataset.nodeId = n.id;
+
+    const badge = n.badge;
+    const st = statusForNode(deal, n.id);
+
+    div.innerHTML = `
+      <div class="top">
+        <div class="name">${n.name}</div>
+        <span class="badge">${badge}</span>
+      </div>
+      <div class="meta">
+        <span class="pill">${n.lane}</span>
+        <span class="pill">${st.replaceAll("_"," ")}</span>
+      </div>
+    `;
+
+    div.addEventListener("click", ()=>{
+      state.selectedNodeId = n.id;
+      renderSidePanel();
+    });
+
+    canvas.appendChild(div);
+  }
+}
+
+function renderEdges(){
+  // Size svg to canvas
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  svg.setAttribute("width", w);
+  svg.setAttribute("height", h);
+  svg.innerHTML = "";
+
+  const defs = document.createElementNS("http://www.w3.org/2000/svg","defs");
+  defs.innerHTML = `
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="rgba(255,255,255,.45)"></path>
+    </marker>
+  `;
+  svg.appendChild(defs);
+
+  for(const e of edges){
+    const a = getNode(e.from), b = getNode(e.to);
+    if(!a||!b) continue;
+    const ra = nodeRect(a), rb = nodeRect(b);
+
+    const x1 = ra.x + ra.w;
+    const y1 = ra.y + ra.h/2;
+    const x2 = rb.x;
+    const y2 = rb.y + rb.h/2;
+
+    // curva suave
+    const dx = Math.max(80, (x2 - x1) / 2);
+    const c1x = x1 + dx;
+    const c1y = y1;
+    const c2x = x2 - dx;
+    const c2y = y2;
+
+    const path = document.createElementNS("http://www.w3.org/2000/svg","path");
+    path.setAttribute("d", `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`);
+    path.setAttribute("class", `edge ${e.kind ? "edge"+cap(e.kind) : ""}`);
+    path.setAttribute("marker-end", "url(#arrow)");
+
+    // cor por tipo
+    if(e.kind==="yes") path.classList.add("edgeYes");
+    if(e.kind==="no") path.classList.add("edgeNo");
+    if(e.kind==="win") path.classList.add("edgeWin");
+    if(e.kind==="lose") path.classList.add("edgeLose");
+
+    svg.appendChild(path);
+
+    if(e.label){
+      const tx = (x1 + x2) / 2;
+      const ty = (y1 + y2) / 2 - 8;
+
+      const text = document.createElementNS("http://www.w3.org/2000/svg","text");
+      text.setAttribute("x", tx);
+      text.setAttribute("y", ty);
+      text.setAttribute("class", "edgeLabel");
+      text.setAttribute("text-anchor","middle");
+      text.textContent = e.label;
+      svg.appendChild(text);
+    }
+  }
+}
+
+function cap(s){ return s ? s[0].toUpperCase()+s.slice(1) : ""; }
+
+function renderSidePanel(){
+  const deal = getDeal();
+  const node = getNode(state.selectedNodeId || deal?.current_node || "StartEvent_Lead");
+
+  $("#sideTitle").textContent = node ? node.name : "Selecione uma etapa";
+  $("#sideSub").textContent = deal ? `Deal ${deal.deal_id} — ${deal.conta}` : "Selecione um deal";
+
+  const kv = $("#kv");
+  kv.innerHTML = "";
+
+  const rows = [
+    ["Elemento BPMN", node?.badge || "-"],
+    ["Node ID", node?.id || "-"],
+    ["Swimlane", node?.lane || "-"],
+    ["Status (deal)", deal ? statusForNode(deal, node?.id) : "-"],
+    ["ICP", deal?.icp || "-"],
+    ["Tipo ICP", deal?.tipo || "-"],
+    ["Dono (interno)", deal?.owner || "-"],
+    ["Última atualização", deal?.last_update || "-"],
+    ["Próxima ação", deal?.next_action || "-"],
+  ];
+
+  for(const [k,v] of rows){
+    const kd = document.createElement("div"); kd.className="k"; kd.textContent=k;
+    const vd = document.createElement("div"); vd.className="v"; vd.textContent=v;
+    kv.appendChild(kd); kv.appendChild(vd);
+  }
+
+  // log
+  const log = $("#log");
+  log.innerHTML = "";
+  if(!deal){ return; }
+
+  const items = state.logs
+    .filter(l => l.deal_id===deal.deal_id && (!node?.id || l.node_id===node.id))
+    .sort((a,b)=> (a.ts>b.ts?-1:1));
+
+  if(items.length===0){
+    const empty = document.createElement("div");
+    empty.className="muted";
+    empty.textContent="Sem registros para esta etapa (ainda).";
+    log.appendChild(empty);
+  }else{
+    for(const it of items){
+      const el = document.createElement("div");
+      el.className = "logItem";
+      el.innerHTML = `
+        <div class="t"><span>${it.ts}</span><span>${it.node_id}</span></div>
+        <div class="m">${escapeHtml(it.msg)}</div>
+      `;
+      log.appendChild(el);
+    }
+  }
+}
+
+function escapeHtml(str){
+  return String(str).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+}
+
+/**
+ * -----------------------------
+ * 3) DATA LOADING
+ * -----------------------------
+ * Esperado do endpoint:
+ * { deals:[...], logs:[...] }
+ */
+async function loadData(){
+  if(!API_URL){
+    state.deals = mock.deals;
+    state.logs = mock.logs;
+    return;
+  }
+  const r = await fetch(API_URL, { cache:"no-store" });
+  const data = await r.json();
+  state.deals = data.deals || [];
+  state.logs = data.logs || [];
+}
+
+function refresh(){
+  applyFilters();
+  renderDealsDropdown();
+  renderNodes();
+  renderEdges();
+  const deal = getDeal();
+  state.selectedNodeId = deal?.current_node || "StartEvent_Lead";
+  renderSidePanel();
+}
+
+function bindUI(){
+  $("#fIcp").addEventListener("change", (e)=>{ state.filters.icp = e.target.value; refresh(); });
+  $("#fTipo").addEventListener("change", (e)=>{ state.filters.tipo = e.target.value; refresh(); });
+  $("#search").addEventListener("input", (e)=>{ state.filters.q = e.target.value; refresh(); });
+  $("#dealSelect").addEventListener("change", (e)=>{ state.selectedDealId = e.target.value; refresh(); });
+  $("#reload").addEventListener("click", async ()=>{ await loadData(); refresh(); });
+
+  // Re-render edges on resize (simple)
+  window.addEventListener("resize", ()=> renderEdges());
+}
+
+(async function init(){
+  bindUI();
+  await loadData();
+  // default filters
+  state.filters = { icp:"ALL", tipo:"ALL", q:"" };
+  refresh();
+})();
+</script>
+</body>
+</html>
