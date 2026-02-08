@@ -3,10 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ciclo de Vendas — Swimlanes (Blueprint & Playbook) v2</title>
+  <title>Ciclo de Vendas — Swimlanes (Blueprint & Playbook) v2.1</title>
   <style>
     :root{
-      /* Neutral palette (executivo) */
       --bg0:#070A12;
       --bg1:#0B1222;
       --card:#111A2E;
@@ -16,18 +15,15 @@
       --text:rgba(255,255,255,.92);
       --muted:rgba(255,255,255,.64);
 
-      /* Accents (restritos) */
-      --accent:#7AA7FF;     /* info */
-      --ok:#43D08A;         /* success */
-      --no:#FF5C6C;         /* fail */
-      --warn:#FFD166;       /* warning */
-      --focus:rgba(122,167,255,.18);
+      --accent:#7AA7FF;
+      --ok:#43D08A;
+      --no:#FF5C6C;
+      --warn:#FFD166;
 
       --shadow: 0 18px 40px rgba(0,0,0,.45);
       --radius: 16px;
       --radius2: 12px;
 
-      /* Layout */
       --laneLabelW: 240px;
       --colW: 260px;
       --rowH: 150px;
@@ -47,7 +43,6 @@
       overflow:hidden;
     }
 
-    /* Top bar */
     .topbar{
       position:sticky; top:0;
       z-index:50;
@@ -112,7 +107,6 @@
     }
     .btn-ghost:hover{background: rgba(255,255,255,.09)}
 
-    /* App layout */
     .app{
       height: calc(100% - 56px);
       display:grid;
@@ -121,7 +115,6 @@
       padding: 14px 16px 16px;
     }
 
-    /* Board container */
     .board{
       position:relative;
       border-radius: var(--radius);
@@ -133,7 +126,6 @@
       min-width: 720px;
     }
 
-    /* Legend + mini status */
     .board-head{
       display:flex;
       align-items:center;
@@ -158,7 +150,6 @@
       font-size:12px; color:var(--muted);
     }
 
-    /* Grid wrapper scroll */
     .grid-wrap{
       position:relative;
       flex:1;
@@ -166,7 +157,6 @@
       padding: 12px;
     }
 
-    /* Swimlane grid */
     .swimgrid{
       position:relative;
       display:grid;
@@ -178,7 +168,6 @@
       padding: 6px;
     }
 
-    /* Column headers */
     .colhead{
       position:sticky; top:0;
       z-index:5;
@@ -205,7 +194,6 @@
     .lanehead .name{font-weight:800; font-size:13px}
     .lanehead .desc{font-size:12px; color:var(--muted); line-height:1.2}
 
-    /* Cell placeholders (for alignment) */
     .cell{
       border-radius: 12px;
       border: 1px dashed rgba(255,255,255,.08);
@@ -213,7 +201,6 @@
     }
     .cell.empty{border-color: transparent; background: transparent}
 
-    /* Nodes */
     .node{
       border-radius: var(--radius2);
       border: 1px solid var(--stroke);
@@ -239,7 +226,6 @@
       white-space:nowrap;
     }
 
-    /* Node types */
     .type-start::before,
     .type-end::before,
     .type-gateway::before,
@@ -256,21 +242,18 @@
     .type-start::before{background: var(--ok)}
     .type-end::before{background: var(--no)}
 
-    /* Status */
     .st-NEUTRO{opacity:.92}
     .st-CONCLUIDO{border-color: rgba(67,208,138,.40)}
     .st-EM_ANDAMENTO{border-color: rgba(122,167,255,.50); box-shadow: 0 18px 40px rgba(122,167,255,.18)}
     .st-BLOQUEADO{border-color: rgba(255,209,102,.55)}
     .st-ENCERRADO{border-color: rgba(255,92,108,.55); opacity:.82}
 
-    /* Active path glow */
     .active{
       outline: 2px solid rgba(122,167,255,.30);
       box-shadow: 0 20px 44px rgba(122,167,255,.16);
       background: linear-gradient(180deg, rgba(17,26,46,.96), rgba(14,22,40,.88));
     }
 
-    /* Connector layer */
     #links{
       position:absolute;
       inset:0;
@@ -278,24 +261,23 @@
       z-index:4;
     }
     .edge{
-      stroke: rgba(255,255,255,.22);
+      stroke: rgba(255,255,255,.18);
       stroke-width: 2;
       fill:none;
     }
-    .edge.active{stroke: rgba(122,167,255,.58); stroke-width: 2.4}
-    .edge.yes{stroke: rgba(67,208,138,.46)}
-    .edge.no{stroke: rgba(255,92,108,.42)}
-    .edge.win{stroke: rgba(67,208,138,.62); stroke-width: 2.6}
-    .edge.lose{stroke: rgba(255,92,108,.62); stroke-width: 2.6}
+    .edge.active{stroke: rgba(122,167,255,.60); stroke-width: 2.4}
+    .edge.yes{stroke: rgba(67,208,138,.50)}
+    .edge.no{stroke: rgba(255,92,108,.52)}
+    .edge.win{stroke: rgba(67,208,138,.66); stroke-width: 2.6}
+    .edge.lose{stroke: rgba(255,92,108,.66); stroke-width: 2.6}
     .edgeLabel{
       font-size: 11px;
-      fill: rgba(255,255,255,.78);
+      fill: rgba(255,255,255,.82);
       paint-order: stroke;
       stroke: rgba(7,10,18,.85);
       stroke-width: 3px;
     }
 
-    /* Side panel */
     .side{
       border-radius: var(--radius);
       border:1px solid var(--stroke);
@@ -362,8 +344,6 @@
       background: rgba(122,167,255,.62);
       border-radius:999px;
     }
-
-    /* Small helpers */
     .nowrap{white-space:nowrap}
   </style>
 </head>
@@ -374,9 +354,9 @@
       <div class="brand">
         <div class="h">
           Ciclo de Vendas — Swimlanes (Blueprint & Playbook)
-          <span class="chip">v2 • legível • rastreável</span>
+          <span class="chip">v2.1 • negativas caem na Gestão</span>
         </div>
-        <div class="p">Grid por etapas + conectores ortogonais. Gateways SIM/NÃO encerram ou avançam o ciclo. Status e log por oportunidade.</div>
+        <div class="p">Grid por etapas + conectores ortogonais. Toda saída NÃO/PERDEU desce imediatamente para Gestão Comercial.</div>
       </div>
 
       <div class="controls">
@@ -434,7 +414,7 @@
     <aside class="side">
       <div class="side-head">
         <div class="h" id="sideTitle">Selecione uma etapa</div>
-        <div class="s" id="sideSub">Clique em um elemento para ver detalhes, critérios e rastreabilidade.</div>
+        <div class="s" id="sideSub">Clique em um elemento para ver detalhes e rastreabilidade.</div>
         <div class="bar"><div id="slaBar"></div></div>
       </div>
       <div class="side-body">
@@ -458,8 +438,7 @@
 const API_URL = null; // "https://script.google.com/macros/s/XXXX/exec";
 
 /**
- * Etapas (colunas). A ordem é governança.
- * Cada coluna é um “gate” do funil.
+ * Etapas (colunas). Ordem de governança.
  */
 const columns = [
   { key:"C1",  title:"Início" },
@@ -478,9 +457,6 @@ const columns = [
   { key:"C14", title:"Término" },
 ];
 
-/**
- * Swimlanes (linhas)
- */
 const lanes = [
   { id:"SDR",    name:"SDR", desc:"Prospecção, ICP/Tipo, contato e qualificação (GO/NO-GO)." },
   { id:"VENDAS", name:"Vendas (Inside/Sênior/Founder)", desc:"Diagnóstico, validação com decisor e proposta. Diagnóstico vende; demo confirma." },
@@ -488,10 +464,6 @@ const lanes = [
   { id:"GESTAO", name:"Gestão Comercial", desc:"Governança do pipeline: motivo de perda, aprendizado e encerramento." },
 ];
 
-/**
- * Nós BPMN posicionados por (lane, column).
- * Sem coordenadas absolutas -> layout robusto.
- */
 const nodes = [
   { id:"StartEvent_Lead", type:"start",   lane:"SDR",    col:"C1",  title:"Início — Lead Identificado", badge:"Start Event" },
   { id:"Task_Classificar",type:"task",    lane:"SDR",    col:"C2",  title:"Classificar ICP e Tipo", badge:"Task" },
@@ -513,10 +485,6 @@ const nodes = [
   { id:"End_Perdeu",       type:"end",    lane:"GESTAO", col:"C14", title:"Término — Perdeu", badge:"End Event" },
 ];
 
-/**
- * Conectores (SIM/NÃO e finais).
- * Ortotonais (Manhattan) serão desenhados via SVG.
- */
 const edges = [
   { from:"StartEvent_Lead", to:"Task_Classificar", label:"", kind:"" },
   { from:"Task_Classificar", to:"Task_Contato", label:"", kind:"" },
@@ -544,9 +512,6 @@ const edges = [
   { from:"Gateway_Decisao", to:"End_Perdeu", label:"PERDEU", kind:"lose" },
 ];
 
-/**
- * Mock (offline)
- */
 const mock = {
   deals: [
     { deal_id:"D-001", conta:"Hospital São Exemplo", icp:"HOSPITAL", tipo:"OURO", owner:"Founder", status:"EM_ANDAMENTO", current_node:"Task_Diagnostico",
@@ -584,7 +549,6 @@ function getDeal(){ return state.deals.find(d=>d.deal_id===state.selectedDealId)
 function getNode(id){ return nodes.find(n=>n.id===id) || null; }
 
 function orderOfNode(nodeId){
-  // Define ordem pela coluna; desempate por lane
   const n = getNode(nodeId);
   if(!n) return 999;
   return colIndex(n.col)*10 + laneRowIndex(n.lane);
@@ -592,12 +556,9 @@ function orderOfNode(nodeId){
 
 function statusForNode(deal, nodeId){
   if(!deal) return "NEUTRO";
-  if(deal.status === "GANHOU"){
-    if(nodeId === "End_Ganhou") return "CONCLUIDO";
-  }
-  if(deal.status === "PERDEU"){
-    if(nodeId === "End_Perdeu") return "ENCERRADO";
-  }
+  if(deal.status === "GANHOU" && nodeId === "End_Ganhou") return "CONCLUIDO";
+  if(deal.status === "PERDEU" && nodeId === "End_Perdeu") return "ENCERRADO";
+
   const cur = orderOfNode(deal.current_node);
   const idx = orderOfNode(nodeId);
   if(idx < cur) return "CONCLUIDO";
@@ -606,12 +567,11 @@ function statusForNode(deal, nodeId){
 }
 
 function isActivePath(deal, edge){
-  // Ativo = conecta algo até o nó atual (inclui borda anterior)
   if(!deal) return false;
-  const curOrder = orderOfNode(deal.current_node);
+  const cur = orderOfNode(deal.current_node);
   const a = orderOfNode(edge.from);
   const b = orderOfNode(edge.to);
-  return (a <= curOrder && b <= curOrder);
+  return (a <= cur && b <= cur);
 }
 
 function applyFilters(){
@@ -659,8 +619,8 @@ function renderGrid(){
   const grid = $("#grid");
   grid.innerHTML = "";
 
-  // Header row (colheads)
-  grid.appendChild(makeCell("cell empty")); // top-left spacer
+  // Header
+  grid.appendChild(makeCell("cell empty"));
   for(const c of columns){
     const ch = document.createElement("div");
     ch.className = "colhead";
@@ -668,7 +628,7 @@ function renderGrid(){
     grid.appendChild(ch);
   }
 
-  // Lane rows
+  // Lanes rows
   for(const lane of lanes){
     const lh = document.createElement("div");
     lh.className = "lanehead";
@@ -683,9 +643,9 @@ function renderGrid(){
     }
   }
 
-  // Place nodes into cells
   const deal = getDeal();
 
+  // Place nodes
   for(const n of nodes){
     const cell = [...grid.querySelectorAll(".cell")].find(x => x.dataset.lane===n.lane && x.dataset.col===n.col);
     if(!cell) continue;
@@ -695,8 +655,7 @@ function renderGrid(){
     nodeDiv.className = `node type-${n.type} st-${st}`;
     nodeDiv.dataset.nodeId = n.id;
 
-    const active = deal && (n.id === deal.current_node);
-    if(active) nodeDiv.classList.add("active");
+    if(deal && n.id === deal.current_node) nodeDiv.classList.add("active");
 
     nodeDiv.innerHTML = `
       <div class="top">
@@ -712,21 +671,17 @@ function renderGrid(){
     nodeDiv.addEventListener("click", ()=>{
       state.selectedNodeId = n.id;
       renderSide();
-      highlightNode(n.id);
     });
 
-    // Clean placeholder look if empty cell is used
     cell.style.borderStyle = "solid";
     cell.style.background = "transparent";
     cell.innerHTML = "";
     cell.appendChild(nodeDiv);
   }
 
-  // For truly empty cells, soften
+  // soften empties
   [...grid.querySelectorAll(".cell")].forEach(c=>{
-    if(!c.querySelector(".node")){
-      c.classList.add("empty");
-    }
+    if(!c.querySelector(".node")) c.classList.add("empty");
   });
 }
 
@@ -766,13 +721,12 @@ function renderSide(){
     kv.appendChild(kd); kv.appendChild(vd);
   }
 
-  // SLA bar (0..10+ days)
   const slaDays = (d && typeof d.sla_days==="number") ? d.sla_days : 0;
   const pct = Math.max(0, Math.min(100, (slaDays/10)*100));
   $("#slaBar").style.width = pct + "%";
-  $("#slaBar").style.background = slaDays <= 3 ? "rgba(67,208,138,.70)" : (slaDays <= 7 ? "rgba(255,209,102,.70)" : "rgba(255,92,108,.70)");
+  $("#slaBar").style.background = slaDays <= 3 ? "rgba(67,208,138,.70)"
+    : (slaDays <= 7 ? "rgba(255,209,102,.70)" : "rgba(255,92,108,.70)");
 
-  // logs for deal + node
   const log = $("#log");
   log.innerHTML = "";
   if(!d) return;
@@ -804,21 +758,19 @@ function escapeHtml(str){
 }
 
 /**
- * SVG connectors (orthogonal)
+ * RENDER EDGES (v2.1)
+ * Requisito: toda negativa (no/lose) desce imediatamente para a lane Gestão (End_Perdeu).
  */
 function renderEdges(){
-  const wrap = $("#gridWrap");
   const svg = $("#links");
   const grid = $("#grid");
 
-  // Fit svg to scroll area
   const w = grid.scrollWidth + 24;
   const h = grid.scrollHeight + 24;
   svg.setAttribute("width", w);
   svg.setAttribute("height", h);
   svg.innerHTML = "";
 
-  // defs
   const defs = document.createElementNS("http://www.w3.org/2000/svg","defs");
   defs.innerHTML = `
     <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
@@ -827,9 +779,9 @@ function renderEdges(){
   `;
   svg.appendChild(defs);
 
-  const d = getDeal();
+  const deal = getDeal();
 
-  // Build index: nodeId -> element rect (relative to grid)
+  // Index: nodeId -> rect relativo ao grid
   const map = {};
   for(const n of nodes){
     const el = grid.querySelector(`[data-node-id="${n.id}"]`);
@@ -846,54 +798,78 @@ function renderEdges(){
 
   const pad = 8;
 
-  edges.forEach(e=>{
-    const a = map[e.from], b = map[e.to];
-    if(!a||!b) return;
-
-    // Start at right middle of source
-    const x1 = a.x + a.w + pad;
-    const y1 = a.y + a.h/2;
-
-    // End at left middle of target
-    const x2 = b.x - pad;
-    const y2 = b.y + b.h/2;
-
-    // Manhattan route: go horizontal then vertical then horizontal
-    const midX = Math.round((x1 + x2) / 2);
-
-    const dPath = `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
-
+  function addPath(dPath, kind, active){
     const path = document.createElementNS("http://www.w3.org/2000/svg","path");
     path.setAttribute("d", dPath);
-    path.setAttribute("class", `edge ${e.kind||""}`);
+    path.setAttribute("class", `edge ${kind||""}`);
     path.setAttribute("marker-end", "url(#arrow)");
-
-    // Active highlighting
-    if(d && isActivePath(d, e)) path.classList.add("active");
-
+    if(active) path.classList.add("active");
     svg.appendChild(path);
+    return path;
+  }
+
+  function addLabel(x, y, text){
+    const t = document.createElementNS("http://www.w3.org/2000/svg","text");
+    t.setAttribute("x", x);
+    t.setAttribute("y", y);
+    t.setAttribute("class", "edgeLabel");
+    t.setAttribute("text-anchor", "middle");
+    t.textContent = text;
+    svg.appendChild(t);
+  }
+
+  function targetPoint(rect){
+    return { x: rect.x - pad, y: rect.y + rect.h/2 };
+  }
+  function sourcePoint(rect){
+    return { x: rect.x + rect.w + pad, y: rect.y + rect.h/2 };
+  }
+
+  edges.forEach(e=>{
+    const a = map[e.from], b = map[e.to];
+    if(!a || !b) return;
+
+    const s = sourcePoint(a);
+    const t = targetPoint(b);
+    const active = deal ? isActivePath(deal, e) : false;
+
+    // NEGATIVAS: cair na Gestão (End_Perdeu) imediatamente
+    if(e.kind === "no" || e.kind === "lose"){
+      const endLose = map["End_Perdeu"];
+      const yGestao = endLose ? (endLose.y + endLose.h/2) : t.y;
+
+      const elbowX = s.x + 26; // pequeno avanço antes de descer
+
+      // saída -> pequeno avanço -> desce para gestão -> vai para End_Perdeu
+      const dPath = `M ${s.x} ${s.y}
+                     L ${elbowX} ${s.y}
+                     L ${elbowX} ${yGestao}
+                     L ${t.x} ${yGestao}
+                     L ${t.x} ${t.y}`;
+
+      addPath(dPath, e.kind, active);
+
+      if(e.label){
+        addLabel(elbowX + 34, s.y - 10, e.label);
+      }
+      return;
+    }
+
+    // ROTEAMENTO PADRÃO (SIM / GANHOU / normais): Manhattan
+    const midX = Math.round((s.x + t.x) / 2);
+    const dPath = `M ${s.x} ${s.y}
+                   L ${midX} ${s.y}
+                   L ${midX} ${t.y}
+                   L ${t.x} ${t.y}`;
+
+    addPath(dPath, e.kind, active);
 
     if(e.label){
-      const tx = midX;
-      const ty = Math.min(y1, y2) - 10;
-      const text = document.createElementNS("http://www.w3.org/2000/svg","text");
-      text.setAttribute("x", tx);
-      text.setAttribute("y", ty);
-      text.setAttribute("class", "edgeLabel");
-      text.setAttribute("text-anchor","middle");
-      text.textContent = e.label;
-      svg.appendChild(text);
+      addLabel(midX, Math.min(s.y, t.y) - 10, e.label);
     }
   });
 }
 
-function highlightNode(nodeId){
-  // side highlight already handled; optional future expansion
-}
-
-/**
- * Data loading
- */
 async function loadData(){
   if(!API_URL){
     state.deals = mock.deals;
@@ -914,12 +890,10 @@ function refresh(){
   const d = getDeal();
   state.selectedNodeId = d?.current_node || "StartEvent_Lead";
   renderSide();
-  // draw edges after layout
   requestAnimationFrame(()=> renderEdges());
 }
 
 function fitToView(){
-  // scroll to keep the current node centered
   const d = getDeal();
   if(!d) return;
   const gridWrap = $("#gridWrap");
@@ -942,7 +916,6 @@ function bind(){
   $("#reload").addEventListener("click", async ()=>{ await loadData(); refresh(); });
   $("#fit").addEventListener("click", ()=>{ fitToView(); });
 
-  // redraw edges on resize / scroll
   const gridWrap = $("#gridWrap");
   gridWrap.addEventListener("scroll", ()=>{ requestAnimationFrame(()=> renderEdges()); });
 
