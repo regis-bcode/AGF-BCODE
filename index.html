@@ -3,21 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ciclo de Vendas — Swimlanes (Blueprint & Playbook) v2.1</title>
+  <title>Ciclo de Vendas — Swimlanes (Blueprint & Playbook) v2.2</title>
   <style>
     :root{
       --bg0:#070A12;
       --bg1:#0B1222;
-      --card:#111A2E;
-      --card2:#0E1628;
       --stroke:rgba(255,255,255,.10);
-      --stroke2:rgba(255,255,255,.16);
       --text:rgba(255,255,255,.92);
       --muted:rgba(255,255,255,.64);
 
-      --accent:#7AA7FF;
-      --ok:#43D08A;
-      --no:#FF5C6C;
+      --accent:#7AA7FF;   /* caminho / foco */
+      --ok:#43D08A;       /* SIM */
+      --no:#FF5C6C;       /* NÃO */
       --warn:#FFD166;
 
       --shadow: 0 18px 40px rgba(0,0,0,.45);
@@ -266,10 +263,11 @@
       fill:none;
     }
     .edge.active{stroke: rgba(122,167,255,.60); stroke-width: 2.4}
-    .edge.yes{stroke: rgba(67,208,138,.50)}
-    .edge.no{stroke: rgba(255,92,108,.52)}
-    .edge.win{stroke: rgba(67,208,138,.66); stroke-width: 2.6}
-    .edge.lose{stroke: rgba(255,92,108,.66); stroke-width: 2.6}
+    .edge.yes{stroke: rgba(67,208,138,.62)}
+    .edge.no{stroke: rgba(255,92,108,.62)}
+    .edge.win{stroke: rgba(67,208,138,.72); stroke-width: 2.7}
+    .edge.lose{stroke: rgba(255,92,108,.72); stroke-width: 2.7}
+
     .edgeLabel{
       font-size: 11px;
       fill: rgba(255,255,255,.82);
@@ -354,9 +352,9 @@
       <div class="brand">
         <div class="h">
           Ciclo de Vendas — Swimlanes (Blueprint & Playbook)
-          <span class="chip">v2.1 • negativas caem na Gestão</span>
+          <span class="chip">v2.2 • SIM verde • NÃO vermelho em trilho</span>
         </div>
-        <div class="p">Grid por etapas + conectores ortogonais. Toda saída NÃO/PERDEU desce imediatamente para Gestão Comercial.</div>
+        <div class="p">SIM segue em verde para a próxima etapa. NÃO/PERDEU cai em vermelho para o trilho inferior e vai para Gestão (End_Perdeu).</div>
       </div>
 
       <div class="controls">
@@ -431,506 +429,510 @@
   </div>
 
 <script>
-/**
- * Integração opcional (Google Sheets -> Apps Script JSON)
- * Se tiver endpoint, cole a URL aqui. Se não, usa mock local.
- */
-const API_URL = null; // "https://script.google.com/macros/s/XXXX/exec";
+  const API_URL = null; // cole aqui a URL do Apps Script quando usar Sheets
 
-/**
- * Etapas (colunas). Ordem de governança.
- */
-const columns = [
-  { key:"C1",  title:"Início" },
-  { key:"C2",  title:"Classificação" },
-  { key:"C3",  title:"Contato" },
-  { key:"C4",  title:"Resposta" },
-  { key:"C5",  title:"Qualificação" },
-  { key:"C6",  title:"Fit" },
-  { key:"C7",  title:"Agendar" },
-  { key:"C8",  title:"Diagnóstico" },
-  { key:"C9",  title:"Prioridade" },
-  { key:"C10", title:"Decisor" },
-  { key:"C11", title:"Concorda?" },
-  { key:"C12", title:"Proposta" },
-  { key:"C13", title:"Decisão" },
-  { key:"C14", title:"Término" },
-];
-
-const lanes = [
-  { id:"SDR",    name:"SDR", desc:"Prospecção, ICP/Tipo, contato e qualificação (GO/NO-GO)." },
-  { id:"VENDAS", name:"Vendas (Inside/Sênior/Founder)", desc:"Diagnóstico, validação com decisor e proposta. Diagnóstico vende; demo confirma." },
-  { id:"CLIENTE",name:"Cliente", desc:"Participa, valida prioridade e decide (ganhou/perdeu)." },
-  { id:"GESTAO", name:"Gestão Comercial", desc:"Governança do pipeline: motivo de perda, aprendizado e encerramento." },
-];
-
-const nodes = [
-  { id:"StartEvent_Lead", type:"start",   lane:"SDR",    col:"C1",  title:"Início — Lead Identificado", badge:"Start Event" },
-  { id:"Task_Classificar",type:"task",    lane:"SDR",    col:"C2",  title:"Classificar ICP e Tipo", badge:"Task" },
-  { id:"Task_Contato",    type:"task",    lane:"SDR",    col:"C3",  title:"Contato Realizado", badge:"Task" },
-  { id:"Gateway_Resposta",type:"gateway", lane:"SDR",    col:"C4",  title:"Gateway — Houve resposta?", badge:"Exclusive Gateway" },
-
-  { id:"Task_Qualificacao",type:"task",   lane:"SDR",    col:"C5",  title:"Qualificação SDR", badge:"Task" },
-  { id:"Gateway_Fit",      type:"gateway",lane:"SDR",    col:"C6",  title:"Gateway — Fit confirmado?", badge:"Exclusive Gateway" },
-
-  { id:"Task_Agendar",     type:"task",   lane:"VENDAS", col:"C7",  title:"Agendar Diagnóstico", badge:"Task" },
-  { id:"Task_Diagnostico", type:"task",   lane:"VENDAS", col:"C8",  title:"Diagnóstico Realizado", badge:"Task" },
-  { id:"Gateway_Prioridade",type:"gateway",lane:"VENDAS",col:"C9",  title:"Gateway — Problema é prioritário?", badge:"Exclusive Gateway" },
-  { id:"Task_Validar",     type:"task",   lane:"VENDAS", col:"C10", title:"Validação com Decisor", badge:"Task" },
-  { id:"Gateway_Decisor",  type:"gateway",lane:"VENDAS", col:"C11", title:"Gateway — Decisor concorda?", badge:"Exclusive Gateway" },
-  { id:"Task_Proposta",    type:"task",   lane:"VENDAS", col:"C12", title:"Enviar Proposta", badge:"Task" },
-
-  { id:"Gateway_Decisao",  type:"gateway",lane:"CLIENTE",col:"C13", title:"Gateway — Decisão Final", badge:"Exclusive Gateway" },
-  { id:"End_Ganhou",       type:"end",    lane:"CLIENTE",col:"C14", title:"Término — Ganhou", badge:"End Event" },
-  { id:"End_Perdeu",       type:"end",    lane:"GESTAO", col:"C14", title:"Término — Perdeu", badge:"End Event" },
-];
-
-const edges = [
-  { from:"StartEvent_Lead", to:"Task_Classificar", label:"", kind:"" },
-  { from:"Task_Classificar", to:"Task_Contato", label:"", kind:"" },
-  { from:"Task_Contato", to:"Gateway_Resposta", label:"", kind:"" },
-
-  { from:"Gateway_Resposta", to:"Task_Qualificacao", label:"SIM", kind:"yes" },
-  { from:"Gateway_Resposta", to:"End_Perdeu", label:"NÃO", kind:"no" },
-
-  { from:"Task_Qualificacao", to:"Gateway_Fit", label:"", kind:"" },
-  { from:"Gateway_Fit", to:"Task_Agendar", label:"SIM", kind:"yes" },
-  { from:"Gateway_Fit", to:"End_Perdeu", label:"NÃO", kind:"no" },
-
-  { from:"Task_Agendar", to:"Task_Diagnostico", label:"", kind:"" },
-  { from:"Task_Diagnostico", to:"Gateway_Prioridade", label:"", kind:"" },
-
-  { from:"Gateway_Prioridade", to:"Task_Validar", label:"SIM", kind:"yes" },
-  { from:"Gateway_Prioridade", to:"End_Perdeu", label:"NÃO", kind:"no" },
-
-  { from:"Task_Validar", to:"Gateway_Decisor", label:"", kind:"" },
-  { from:"Gateway_Decisor", to:"Task_Proposta", label:"SIM", kind:"yes" },
-  { from:"Gateway_Decisor", to:"End_Perdeu", label:"NÃO", kind:"no" },
-
-  { from:"Task_Proposta", to:"Gateway_Decisao", label:"", kind:"" },
-  { from:"Gateway_Decisao", to:"End_Ganhou", label:"GANHOU", kind:"win" },
-  { from:"Gateway_Decisao", to:"End_Perdeu", label:"PERDEU", kind:"lose" },
-];
-
-const mock = {
-  deals: [
-    { deal_id:"D-001", conta:"Hospital São Exemplo", icp:"HOSPITAL", tipo:"OURO", owner:"Founder", status:"EM_ANDAMENTO", current_node:"Task_Diagnostico",
-      last_update:"2026-02-08 10:20", next_action:"Realizar diagnóstico", sla_days: 2 },
-    { deal_id:"D-002", conta:"OS Saúde Regional", icp:"OS", tipo:"PRATA", owner:"Vendas Sênior", status:"EM_ANDAMENTO", current_node:"Task_Qualificacao",
-      last_update:"2026-02-08 09:10", next_action:"Mapear decisor corporativo", sla_days: 5 },
-    { deal_id:"D-003", conta:"Clínica Alpha", icp:"CLINICA", tipo:"OURO", owner:"Inside", status:"EM_ANDAMENTO", current_node:"Task_Proposta",
-      last_update:"2026-02-07 17:30", next_action:"Follow-up da proposta", sla_days: 1 },
-  ],
-  logs: [
-    { deal_id:"D-001", ts:"2026-02-08 10:20", node_id:"Task_Diagnostico", msg:"Diagnóstico confirmado com sponsor (Qualidade). Coletar impactos e evidências." },
-    { deal_id:"D-001", ts:"2026-02-07 15:00", node_id:"Task_Agendar", msg:"Diagnóstico agendado com Qualidade + CCIH." },
-
-    { deal_id:"D-002", ts:"2026-02-08 09:10", node_id:"Task_Qualificacao", msg:"Dor contratual citada, mas sem decisor ainda. Necessário mapear diretoria executiva." },
-
-    { deal_id:"D-003", ts:"2026-02-07 17:30", node_id:"Task_Proposta", msg:"Proposta enviada baseada no diagnóstico operacional. Retorno combinado para 09/02." },
-  ],
-};
-
-let state = {
-  deals: [],
-  logs: [],
-  filtered: [],
-  selectedDealId: null,
-  selectedNodeId: null,
-  filters: { icp:"ALL", tipo:"ALL", q:"" },
-};
-
-const $ = s => document.querySelector(s);
-
-function laneRowIndex(laneId){ return lanes.findIndex(l=>l.id===laneId); }
-function colIndex(colKey){ return columns.findIndex(c=>c.key===colKey); }
-
-function getDeal(){ return state.deals.find(d=>d.deal_id===state.selectedDealId) || null; }
-function getNode(id){ return nodes.find(n=>n.id===id) || null; }
-
-function orderOfNode(nodeId){
-  const n = getNode(nodeId);
-  if(!n) return 999;
-  return colIndex(n.col)*10 + laneRowIndex(n.lane);
-}
-
-function statusForNode(deal, nodeId){
-  if(!deal) return "NEUTRO";
-  if(deal.status === "GANHOU" && nodeId === "End_Ganhou") return "CONCLUIDO";
-  if(deal.status === "PERDEU" && nodeId === "End_Perdeu") return "ENCERRADO";
-
-  const cur = orderOfNode(deal.current_node);
-  const idx = orderOfNode(nodeId);
-  if(idx < cur) return "CONCLUIDO";
-  if(idx === cur) return "EM_ANDAMENTO";
-  return "NEUTRO";
-}
-
-function isActivePath(deal, edge){
-  if(!deal) return false;
-  const cur = orderOfNode(deal.current_node);
-  const a = orderOfNode(edge.from);
-  const b = orderOfNode(edge.to);
-  return (a <= cur && b <= cur);
-}
-
-function applyFilters(){
-  const {icp, tipo, q} = state.filters;
-  const qq = (q||"").toLowerCase().trim();
-  state.filtered = state.deals.filter(d=>{
-    if(icp !== "ALL" && d.icp !== icp) return false;
-    if(tipo !== "ALL" && d.tipo !== tipo) return false;
-    if(qq){
-      const hay = `${d.deal_id} ${d.conta} ${d.owner} ${d.icp} ${d.tipo} ${d.current_node}`.toLowerCase();
-      if(!hay.includes(qq)) return false;
-    }
-    return true;
-  });
-}
-
-function renderDealSelect(){
-  const sel = $("#dealSelect");
-  sel.innerHTML = "";
-  const list = state.filtered.length ? state.filtered : state.deals;
-  for(const d of list){
-    const opt = document.createElement("option");
-    opt.value = d.deal_id;
-    opt.textContent = `${d.deal_id} — ${d.conta}`;
-    sel.appendChild(opt);
-  }
-  state.selectedDealId = (list[0] && list[0].deal_id) || null;
-  sel.value = state.selectedDealId || "";
-}
-
-function renderBoardMeta(){
-  const d = getDeal();
-  const el = $("#boardMeta");
-  if(!d){ el.innerHTML = ""; return; }
-  el.innerHTML = `
-    <span class="pill"><span class="dot cur" style="width:8px;height:8px"></span><span class="nowrap">${d.deal_id}</span></span>
-    <span class="pill"><span class="nowrap">${d.icp}</span></span>
-    <span class="pill"><span class="nowrap">${d.tipo}</span></span>
-    <span class="pill"><span class="nowrap">Dono: ${d.owner}</span></span>
-    <span class="pill"><span class="nowrap">Atual: ${d.current_node}</span></span>
-  `;
-}
-
-function renderGrid(){
-  const grid = $("#grid");
-  grid.innerHTML = "";
-
-  // Header
-  grid.appendChild(makeCell("cell empty"));
-  for(const c of columns){
-    const ch = document.createElement("div");
-    ch.className = "colhead";
-    ch.textContent = c.title;
-    grid.appendChild(ch);
-  }
-
-  // Lanes rows
-  for(const lane of lanes){
-    const lh = document.createElement("div");
-    lh.className = "lanehead";
-    lh.innerHTML = `<div class="name">${lane.name}</div><div class="desc">${lane.desc}</div>`;
-    grid.appendChild(lh);
-
-    for(const c of columns){
-      const cell = makeCell("cell");
-      cell.dataset.lane = lane.id;
-      cell.dataset.col = c.key;
-      grid.appendChild(cell);
-    }
-  }
-
-  const deal = getDeal();
-
-  // Place nodes
-  for(const n of nodes){
-    const cell = [...grid.querySelectorAll(".cell")].find(x => x.dataset.lane===n.lane && x.dataset.col===n.col);
-    if(!cell) continue;
-
-    const st = statusForNode(deal, n.id);
-    const nodeDiv = document.createElement("div");
-    nodeDiv.className = `node type-${n.type} st-${st}`;
-    nodeDiv.dataset.nodeId = n.id;
-
-    if(deal && n.id === deal.current_node) nodeDiv.classList.add("active");
-
-    nodeDiv.innerHTML = `
-      <div class="top">
-        <div class="title">${n.title}</div>
-        <span class="chip">${n.badge}</span>
-      </div>
-      <div class="tags">
-        <span class="tag">${n.lane}</span>
-        <span class="tag">${st.replaceAll("_"," ")}</span>
-      </div>
-    `;
-
-    nodeDiv.addEventListener("click", ()=>{
-      state.selectedNodeId = n.id;
-      renderSide();
-    });
-
-    cell.style.borderStyle = "solid";
-    cell.style.background = "transparent";
-    cell.innerHTML = "";
-    cell.appendChild(nodeDiv);
-  }
-
-  // soften empties
-  [...grid.querySelectorAll(".cell")].forEach(c=>{
-    if(!c.querySelector(".node")) c.classList.add("empty");
-  });
-}
-
-function makeCell(cls){
-  const d = document.createElement("div");
-  d.className = cls;
-  return d;
-}
-
-function renderSide(){
-  const d = getDeal();
-  const nodeId = state.selectedNodeId || d?.current_node || "StartEvent_Lead";
-  const n = getNode(nodeId);
-
-  $("#sideTitle").textContent = n ? n.title : "Selecione uma etapa";
-  $("#sideSub").textContent = d ? `Deal ${d.deal_id} — ${d.conta}` : "Selecione um deal";
-
-  const kv = $("#kv");
-  kv.innerHTML = "";
-
-  const st = d ? statusForNode(d, nodeId) : "-";
-  const rows = [
-    ["Elemento BPMN", n?.badge || "-"],
-    ["Node ID", nodeId || "-"],
-    ["Swimlane", n?.lane || "-"],
-    ["Status (deal)", st],
-    ["ICP", d?.icp || "-"],
-    ["Tipo ICP", d?.tipo || "-"],
-    ["Dono (interno)", d?.owner || "-"],
-    ["Última atualização", d?.last_update || "-"],
-    ["Próxima ação", d?.next_action || "-"],
+  const columns = [
+    { key:"C1",  title:"Início" },
+    { key:"C2",  title:"Classificação" },
+    { key:"C3",  title:"Contato" },
+    { key:"C4",  title:"Resposta" },
+    { key:"C5",  title:"Qualificação" },
+    { key:"C6",  title:"Fit" },
+    { key:"C7",  title:"Agendar" },
+    { key:"C8",  title:"Diagnóstico" },
+    { key:"C9",  title:"Prioridade" },
+    { key:"C10", title:"Decisor" },
+    { key:"C11", title:"Concorda?" },
+    { key:"C12", title:"Proposta" },
+    { key:"C13", title:"Decisão" },
+    { key:"C14", title:"Término" },
   ];
 
-  for(const [k,v] of rows){
-    const kd = document.createElement("div"); kd.className="k"; kd.textContent=k;
-    const vd = document.createElement("div"); vd.className="v"; vd.textContent=v;
-    kv.appendChild(kd); kv.appendChild(vd);
+  const lanes = [
+    { id:"SDR",    name:"SDR", desc:"Prospecção, ICP/Tipo, contato e qualificação (GO/NO-GO)." },
+    { id:"VENDAS", name:"Vendas (Inside/Sênior/Founder)", desc:"Diagnóstico, validação com decisor e proposta. Diagnóstico vende; demo confirma." },
+    { id:"CLIENTE",name:"Cliente", desc:"Participa, valida prioridade e decide (ganhou/perdeu)." },
+    { id:"GESTAO", name:"Gestão Comercial", desc:"Governança do pipeline: motivo de perda, aprendizado e encerramento." },
+  ];
+
+  const nodes = [
+    { id:"StartEvent_Lead", type:"start",   lane:"SDR",    col:"C1",  title:"Início — Lead Identificado", badge:"Start Event" },
+    { id:"Task_Classificar",type:"task",    lane:"SDR",    col:"C2",  title:"Classificar ICP e Tipo", badge:"Task" },
+    { id:"Task_Contato",    type:"task",    lane:"SDR",    col:"C3",  title:"Contato Realizado", badge:"Task" },
+    { id:"Gateway_Resposta",type:"gateway", lane:"SDR",    col:"C4",  title:"Gateway — Houve resposta?", badge:"Exclusive Gateway" },
+
+    { id:"Task_Qualificacao",type:"task",   lane:"SDR",    col:"C5",  title:"Qualificação SDR", badge:"Task" },
+    { id:"Gateway_Fit",      type:"gateway",lane:"SDR",    col:"C6",  title:"Gateway — Fit confirmado?", badge:"Exclusive Gateway" },
+
+    { id:"Task_Agendar",     type:"task",   lane:"VENDAS", col:"C7",  title:"Agendar Diagnóstico", badge:"Task" },
+    { id:"Task_Diagnostico", type:"task",   lane:"VENDAS", col:"C8",  title:"Diagnóstico Realizado", badge:"Task" },
+    { id:"Gateway_Prioridade",type:"gateway",lane:"VENDAS",col:"C9",  title:"Gateway — Problema é prioritário?", badge:"Exclusive Gateway" },
+    { id:"Task_Validar",     type:"task",   lane:"VENDAS", col:"C10", title:"Validação com Decisor", badge:"Task" },
+    { id:"Gateway_Decisor",  type:"gateway",lane:"VENDAS", col:"C11", title:"Gateway — Decisor concorda?", badge:"Exclusive Gateway" },
+    { id:"Task_Proposta",    type:"task",   lane:"VENDAS", col:"C12", title:"Enviar Proposta", badge:"Task" },
+
+    { id:"Gateway_Decisao",  type:"gateway",lane:"CLIENTE",col:"C13", title:"Gateway — Decisão Final", badge:"Exclusive Gateway" },
+    { id:"End_Ganhou",       type:"end",    lane:"CLIENTE",col:"C14", title:"Término — Ganhou", badge:"End Event" },
+    { id:"End_Perdeu",       type:"end",    lane:"GESTAO", col:"C14", title:"Término — Perdeu", badge:"End Event" },
+  ];
+
+  const edges = [
+    { from:"StartEvent_Lead", to:"Task_Classificar", label:"", kind:"" },
+    { from:"Task_Classificar", to:"Task_Contato", label:"", kind:"" },
+    { from:"Task_Contato", to:"Gateway_Resposta", label:"", kind:"" },
+
+    { from:"Gateway_Resposta", to:"Task_Qualificacao", label:"SIM", kind:"yes" },
+    { from:"Gateway_Resposta", to:"End_Perdeu", label:"NÃO", kind:"no" },
+
+    { from:"Task_Qualificacao", to:"Gateway_Fit", label:"", kind:"" },
+    { from:"Gateway_Fit", to:"Task_Agendar", label:"SIM", kind:"yes" },
+    { from:"Gateway_Fit", to:"End_Perdeu", label:"NÃO", kind:"no" },
+
+    { from:"Task_Agendar", to:"Task_Diagnostico", label:"", kind:"" },
+    { from:"Task_Diagnostico", to:"Gateway_Prioridade", label:"", kind:"" },
+
+    { from:"Gateway_Prioridade", to:"Task_Validar", label:"SIM", kind:"yes" },
+    { from:"Gateway_Prioridade", to:"End_Perdeu", label:"NÃO", kind:"no" },
+
+    { from:"Task_Validar", to:"Gateway_Decisor", label:"", kind:"" },
+    { from:"Gateway_Decisor", to:"Task_Proposta", label:"SIM", kind:"yes" },
+    { from:"Gateway_Decisor", to:"End_Perdeu", label:"NÃO", kind:"no" },
+
+    { from:"Task_Proposta", to:"Gateway_Decisao", label:"", kind:"" },
+    { from:"Gateway_Decisao", to:"End_Ganhou", label:"GANHOU", kind:"win" },
+    { from:"Gateway_Decisao", to:"End_Perdeu", label:"PERDEU", kind:"lose" },
+  ];
+
+  const mock = {
+    deals: [
+      { deal_id:"D-001", conta:"Hospital São Exemplo", icp:"HOSPITAL", tipo:"OURO", owner:"Founder", status:"EM_ANDAMENTO", current_node:"Task_Diagnostico",
+        last_update:"2026-02-08 10:20", next_action:"Realizar diagnóstico", sla_days: 2 },
+      { deal_id:"D-002", conta:"OS Saúde Regional", icp:"OS", tipo:"PRATA", owner:"Vendas Sênior", status:"EM_ANDAMENTO", current_node:"Task_Qualificacao",
+        last_update:"2026-02-08 09:10", next_action:"Mapear decisor corporativo", sla_days: 5 },
+      { deal_id:"D-003", conta:"Clínica Alpha", icp:"CLINICA", tipo:"OURO", owner:"Inside", status:"EM_ANDAMENTO", current_node:"Task_Proposta",
+        last_update:"2026-02-07 17:30", next_action:"Follow-up da proposta", sla_days: 1 },
+    ],
+    logs: [
+      { deal_id:"D-001", ts:"2026-02-08 10:20", node_id:"Task_Diagnostico", msg:"Diagnóstico confirmado com sponsor (Qualidade). Coletar impactos e evidências." },
+      { deal_id:"D-001", ts:"2026-02-07 15:00", node_id:"Task_Agendar", msg:"Diagnóstico agendado com Qualidade + CCIH." },
+      { deal_id:"D-002", ts:"2026-02-08 09:10", node_id:"Task_Qualificacao", msg:"Dor contratual citada, mas sem decisor ainda. Necessário mapear diretoria executiva." },
+      { deal_id:"D-003", ts:"2026-02-07 17:30", node_id:"Task_Proposta", msg:"Proposta enviada baseada no diagnóstico operacional. Retorno combinado para 09/02." },
+    ],
+  };
+
+  let state = {
+    deals: [],
+    logs: [],
+    filtered: [],
+    selectedDealId: null,
+    selectedNodeId: null,
+    filters: { icp:"ALL", tipo:"ALL", q:"" },
+  };
+
+  const $ = s => document.querySelector(s);
+
+  function laneRowIndex(laneId){ return lanes.findIndex(l=>l.id===laneId); }
+  function colIndex(colKey){ return columns.findIndex(c=>c.key===colKey); }
+
+  function getDeal(){ return state.deals.find(d=>d.deal_id===state.selectedDealId) || null; }
+  function getNode(id){ return nodes.find(n=>n.id===id) || null; }
+
+  function orderOfNode(nodeId){
+    const n = getNode(nodeId);
+    if(!n) return 999;
+    return colIndex(n.col)*10 + laneRowIndex(n.lane);
   }
 
-  const slaDays = (d && typeof d.sla_days==="number") ? d.sla_days : 0;
-  const pct = Math.max(0, Math.min(100, (slaDays/10)*100));
-  $("#slaBar").style.width = pct + "%";
-  $("#slaBar").style.background = slaDays <= 3 ? "rgba(67,208,138,.70)"
-    : (slaDays <= 7 ? "rgba(255,209,102,.70)" : "rgba(255,92,108,.70)");
+  function statusForNode(deal, nodeId){
+    if(!deal) return "NEUTRO";
+    if(deal.status === "GANHOU" && nodeId === "End_Ganhou") return "CONCLUIDO";
+    if(deal.status === "PERDEU" && nodeId === "End_Perdeu") return "ENCERRADO";
+    const cur = orderOfNode(deal.current_node);
+    const idx = orderOfNode(nodeId);
+    if(idx < cur) return "CONCLUIDO";
+    if(idx === cur) return "EM_ANDAMENTO";
+    return "NEUTRO";
+  }
 
-  const log = $("#log");
-  log.innerHTML = "";
-  if(!d) return;
+  function isActivePath(deal, edge){
+    if(!deal) return false;
+    const cur = orderOfNode(deal.current_node);
+    const a = orderOfNode(edge.from);
+    const b = orderOfNode(edge.to);
+    return (a <= cur && b <= cur);
+  }
 
-  const items = state.logs
-    .filter(x => x.deal_id===d.deal_id && x.node_id===nodeId)
-    .sort((a,b)=> (a.ts>b.ts?-1:1));
+  function applyFilters(){
+    const {icp, tipo, q} = state.filters;
+    const qq = (q||"").toLowerCase().trim();
+    state.filtered = state.deals.filter(d=>{
+      if(icp !== "ALL" && d.icp !== icp) return false;
+      if(tipo !== "ALL" && d.tipo !== tipo) return false;
+      if(qq){
+        const hay = `${d.deal_id} ${d.conta} ${d.owner} ${d.icp} ${d.tipo} ${d.current_node}`.toLowerCase();
+        if(!hay.includes(qq)) return false;
+      }
+      return true;
+    });
+  }
 
-  if(items.length===0){
-    const empty = document.createElement("div");
-    empty.className = "muted";
-    empty.textContent = "Sem registros para esta etapa (ainda).";
-    log.appendChild(empty);
-  }else{
-    for(const it of items){
-      const el = document.createElement("div");
-      el.className = "logItem";
-      el.innerHTML = `
-        <div class="t"><span>${it.ts}</span><span>${it.node_id}</span></div>
-        <div class="m">${escapeHtml(it.msg)}</div>
+  function renderDealSelect(){
+    const sel = $("#dealSelect");
+    sel.innerHTML = "";
+    const list = state.filtered.length ? state.filtered : state.deals;
+    for(const d of list){
+      const opt = document.createElement("option");
+      opt.value = d.deal_id;
+      opt.textContent = `${d.deal_id} — ${d.conta}`;
+      sel.appendChild(opt);
+    }
+    state.selectedDealId = (list[0] && list[0].deal_id) || null;
+    sel.value = state.selectedDealId || "";
+  }
+
+  function renderBoardMeta(){
+    const d = getDeal();
+    const el = $("#boardMeta");
+    if(!d){ el.innerHTML = ""; return; }
+    el.innerHTML = `
+      <span class="pill"><span class="dot cur" style="width:8px;height:8px"></span><span class="nowrap">${d.deal_id}</span></span>
+      <span class="pill"><span class="nowrap">${d.icp}</span></span>
+      <span class="pill"><span class="nowrap">${d.tipo}</span></span>
+      <span class="pill"><span class="nowrap">Dono: ${d.owner}</span></span>
+      <span class="pill"><span class="nowrap">Atual: ${d.current_node}</span></span>
+    `;
+  }
+
+  function renderGrid(){
+    const grid = $("#grid");
+    grid.innerHTML = "";
+
+    grid.appendChild(makeCell("cell empty"));
+    for(const c of columns){
+      const ch = document.createElement("div");
+      ch.className = "colhead";
+      ch.textContent = c.title;
+      grid.appendChild(ch);
+    }
+
+    for(const lane of lanes){
+      const lh = document.createElement("div");
+      lh.className = "lanehead";
+      lh.innerHTML = `<div class="name">${lane.name}</div><div class="desc">${lane.desc}</div>`;
+      grid.appendChild(lh);
+
+      for(const c of columns){
+        const cell = makeCell("cell");
+        cell.dataset.lane = lane.id;
+        cell.dataset.col = c.key;
+        grid.appendChild(cell);
+      }
+    }
+
+    const deal = getDeal();
+
+    for(const n of nodes){
+      const cell = [...grid.querySelectorAll(".cell")].find(x => x.dataset.lane===n.lane && x.dataset.col===n.col);
+      if(!cell) continue;
+
+      const st = statusForNode(deal, n.id);
+      const nodeDiv = document.createElement("div");
+      nodeDiv.className = `node type-${n.type} st-${st}`;
+      nodeDiv.dataset.nodeId = n.id;
+
+      if(deal && n.id === deal.current_node) nodeDiv.classList.add("active");
+
+      nodeDiv.innerHTML = `
+        <div class="top">
+          <div class="title">${n.title}</div>
+          <span class="chip">${n.badge}</span>
+        </div>
+        <div class="tags">
+          <span class="tag">${n.lane}</span>
+          <span class="tag">${st.replaceAll("_"," ")}</span>
+        </div>
       `;
-      log.appendChild(el);
+
+      nodeDiv.addEventListener("click", ()=>{
+        state.selectedNodeId = n.id;
+        renderSide();
+      });
+
+      cell.style.borderStyle = "solid";
+      cell.style.background = "transparent";
+      cell.innerHTML = "";
+      cell.appendChild(nodeDiv);
+    }
+
+    [...grid.querySelectorAll(".cell")].forEach(c=>{
+      if(!c.querySelector(".node")) c.classList.add("empty");
+    });
+  }
+
+  function makeCell(cls){
+    const d = document.createElement("div");
+    d.className = cls;
+    return d;
+  }
+
+  function renderSide(){
+    const d = getDeal();
+    const nodeId = state.selectedNodeId || d?.current_node || "StartEvent_Lead";
+    const n = getNode(nodeId);
+
+    $("#sideTitle").textContent = n ? n.title : "Selecione uma etapa";
+    $("#sideSub").textContent = d ? `Deal ${d.deal_id} — ${d.conta}` : "Selecione um deal";
+
+    const kv = $("#kv");
+    kv.innerHTML = "";
+
+    const st = d ? statusForNode(d, nodeId) : "-";
+    const rows = [
+      ["Elemento BPMN", n?.badge || "-"],
+      ["Node ID", nodeId || "-"],
+      ["Swimlane", n?.lane || "-"],
+      ["Status (deal)", st],
+      ["ICP", d?.icp || "-"],
+      ["Tipo ICP", d?.tipo || "-"],
+      ["Dono (interno)", d?.owner || "-"],
+      ["Última atualização", d?.last_update || "-"],
+      ["Próxima ação", d?.next_action || "-"],
+    ];
+
+    for(const [k,v] of rows){
+      const kd = document.createElement("div"); kd.className="k"; kd.textContent=k;
+      const vd = document.createElement("div"); vd.className="v"; vd.textContent=v;
+      kv.appendChild(kd); kv.appendChild(vd);
+    }
+
+    const slaDays = (d && typeof d.sla_days==="number") ? d.sla_days : 0;
+    const pct = Math.max(0, Math.min(100, (slaDays/10)*100));
+    $("#slaBar").style.width = pct + "%";
+    $("#slaBar").style.background = slaDays <= 3 ? "rgba(67,208,138,.70)"
+      : (slaDays <= 7 ? "rgba(255,209,102,.70)" : "rgba(255,92,108,.70)");
+
+    const log = $("#log");
+    log.innerHTML = "";
+    if(!d) return;
+
+    const items = state.logs
+      .filter(x => x.deal_id===d.deal_id && x.node_id===nodeId)
+      .sort((a,b)=> (a.ts>b.ts?-1:1));
+
+    if(items.length===0){
+      const empty = document.createElement("div");
+      empty.className = "muted";
+      empty.textContent = "Sem registros para esta etapa (ainda).";
+      log.appendChild(empty);
+    }else{
+      for(const it of items){
+        const el = document.createElement("div");
+        el.className = "logItem";
+        el.innerHTML = `
+          <div class="t"><span>${it.ts}</span><span>${it.node_id}</span></div>
+          <div class="m">${escapeHtml(it.msg)}</div>
+        `;
+        log.appendChild(el);
+      }
     }
   }
-}
 
-function escapeHtml(str){
-  return String(str).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
-}
-
-/**
- * RENDER EDGES (v2.1)
- * Requisito: toda negativa (no/lose) desce imediatamente para a lane Gestão (End_Perdeu).
- */
-function renderEdges(){
-  const svg = $("#links");
-  const grid = $("#grid");
-
-  const w = grid.scrollWidth + 24;
-  const h = grid.scrollHeight + 24;
-  svg.setAttribute("width", w);
-  svg.setAttribute("height", h);
-  svg.innerHTML = "";
-
-  const defs = document.createElementNS("http://www.w3.org/2000/svg","defs");
-  defs.innerHTML = `
-    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
-      <path d="M0,0 L12,6 L0,12 z" fill="rgba(255,255,255,.40)"></path>
-    </marker>
-  `;
-  svg.appendChild(defs);
-
-  const deal = getDeal();
-
-  // Index: nodeId -> rect relativo ao grid
-  const map = {};
-  for(const n of nodes){
-    const el = grid.querySelector(`[data-node-id="${n.id}"]`);
-    if(!el) continue;
-    const r = el.getBoundingClientRect();
-    const gr = grid.getBoundingClientRect();
-    map[n.id] = {
-      x: (r.left - gr.left) + grid.scrollLeft,
-      y: (r.top  - gr.top ) + grid.scrollTop,
-      w: r.width,
-      h: r.height
-    };
+  function escapeHtml(str){
+    return String(str).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
   }
 
-  const pad = 8;
+  /**
+   * RENDER EDGES v2.2
+   * SIM (yes/win) -> verde, segue para frente (roteamento Manhattan padrão)
+   * NÃO (no/lose) -> vermelho, cai para trilho inferior (rail) e vai até End_Perdeu (Gestão)
+   */
+  function renderEdges(){
+    const svg = $("#links");
+    const grid = $("#grid");
 
-  function addPath(dPath, kind, active){
-    const path = document.createElementNS("http://www.w3.org/2000/svg","path");
-    path.setAttribute("d", dPath);
-    path.setAttribute("class", `edge ${kind||""}`);
-    path.setAttribute("marker-end", "url(#arrow)");
-    if(active) path.classList.add("active");
-    svg.appendChild(path);
-    return path;
-  }
+    const w = grid.scrollWidth + 24;
+    const h = grid.scrollHeight + 24;
+    svg.setAttribute("width", w);
+    svg.setAttribute("height", h);
+    svg.innerHTML = "";
 
-  function addLabel(x, y, text){
-    const t = document.createElementNS("http://www.w3.org/2000/svg","text");
-    t.setAttribute("x", x);
-    t.setAttribute("y", y);
-    t.setAttribute("class", "edgeLabel");
-    t.setAttribute("text-anchor", "middle");
-    t.textContent = text;
-    svg.appendChild(t);
-  }
+    const defs = document.createElementNS("http://www.w3.org/2000/svg","defs");
+    defs.innerHTML = `
+      <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+        <path d="M0,0 L12,6 L0,12 z" fill="rgba(255,255,255,.40)"></path>
+      </marker>
+    `;
+    svg.appendChild(defs);
 
-  function targetPoint(rect){
-    return { x: rect.x - pad, y: rect.y + rect.h/2 };
-  }
-  function sourcePoint(rect){
-    return { x: rect.x + rect.w + pad, y: rect.y + rect.h/2 };
-  }
+    const deal = getDeal();
 
-  edges.forEach(e=>{
-    const a = map[e.from], b = map[e.to];
-    if(!a || !b) return;
+    // Index: nodeId -> rect relativo ao grid
+    const map = {};
+    let maxY = 0;
 
-    const s = sourcePoint(a);
-    const t = targetPoint(b);
-    const active = deal ? isActivePath(deal, e) : false;
+    for(const n of nodes){
+      const el = grid.querySelector(`[data-node-id="${n.id}"]`);
+      if(!el) continue;
+      const r = el.getBoundingClientRect();
+      const gr = grid.getBoundingClientRect();
+      const rect = {
+        x: (r.left - gr.left) + grid.scrollLeft,
+        y: (r.top  - gr.top ) + grid.scrollTop,
+        w: r.width,
+        h: r.height
+      };
+      map[n.id] = rect;
+      maxY = Math.max(maxY, rect.y + rect.h);
+    }
 
-    // NEGATIVAS: cair na Gestão (End_Perdeu) imediatamente
-    if(e.kind === "no" || e.kind === "lose"){
-      const endLose = map["End_Perdeu"];
-      const yGestao = endLose ? (endLose.y + endLose.h/2) : t.y;
+    const pad = 8;
 
-      const elbowX = s.x + 26; // pequeno avanço antes de descer
+    // Trilho inferior para negativas (abaixo do conteúdo)
+    const railY = maxY + 36;
 
-      // saída -> pequeno avanço -> desce para gestão -> vai para End_Perdeu
+    function addPath(dPath, kind, active){
+      const path = document.createElementNS("http://www.w3.org/2000/svg","path");
+      path.setAttribute("d", dPath);
+      path.setAttribute("class", `edge ${kind||""}`);
+      path.setAttribute("marker-end", "url(#arrow)");
+      if(active) path.classList.add("active");
+      svg.appendChild(path);
+      return path;
+    }
+
+    function addLabel(x, y, text){
+      const t = document.createElementNS("http://www.w3.org/2000/svg","text");
+      t.setAttribute("x", x);
+      t.setAttribute("y", y);
+      t.setAttribute("class", "edgeLabel");
+      t.setAttribute("text-anchor", "middle");
+      t.textContent = text;
+      svg.appendChild(t);
+    }
+
+    function sourcePoint(rect){
+      return { x: rect.x + rect.w + pad, y: rect.y + rect.h/2 };
+    }
+    function targetPoint(rect){
+      return { x: rect.x - pad, y: rect.y + rect.h/2 };
+    }
+
+    edges.forEach(e=>{
+      const a = map[e.from], b = map[e.to];
+      if(!a || !b) return;
+
+      const s = sourcePoint(a);
+      const t = targetPoint(b);
+      const active = deal ? isActivePath(deal, e) : false;
+
+      // NEGATIVAS: "no" e "lose" vão para trilho e sobem no End_Perdeu
+      if(e.kind === "no" || e.kind === "lose"){
+        const endLose = map["End_Perdeu"];
+        if(!endLose) return;
+
+        const endT = targetPoint(endLose);
+        const elbowX = s.x + 26;           // avanço curto antes de descer
+        const upX = endT.x - 14;           // aproxima do End_Perdeu antes de subir
+        const labelX = elbowX + 40;
+
+        // Path:
+        // sai -> pequeno avanço -> desce ao rail -> segue no rail até perto do End_Perdeu -> sobe -> entra no End_Perdeu
+        const dPath = `M ${s.x} ${s.y}
+                       L ${elbowX} ${s.y}
+                       L ${elbowX} ${railY}
+                       L ${upX} ${railY}
+                       L ${upX} ${endT.y}
+                       L ${endT.x} ${endT.y}`;
+
+        addPath(dPath, e.kind, active);
+
+        // Label "NÃO/PERDEU" na base do drop (como na imagem)
+        if(e.label){
+          addLabel(labelX, railY - 10, e.label);
+        }
+        return;
+      }
+
+      // POSITIVAS / NORMAIS (SIM, GANHOU, etc.): Manhattan padrão
+      const midX = Math.round((s.x + t.x) / 2);
       const dPath = `M ${s.x} ${s.y}
-                     L ${elbowX} ${s.y}
-                     L ${elbowX} ${yGestao}
-                     L ${t.x} ${yGestao}
+                     L ${midX} ${s.y}
+                     L ${midX} ${t.y}
                      L ${t.x} ${t.y}`;
 
       addPath(dPath, e.kind, active);
 
+      // Labels de SIM/GANHOU perto do topo do cotovelo
       if(e.label){
-        addLabel(elbowX + 34, s.y - 10, e.label);
+        addLabel(midX, Math.min(s.y, t.y) - 10, e.label);
       }
+    });
+
+    // Ajusta altura do SVG para comportar o trilho
+    svg.setAttribute("height", Math.max(h, railY + 80));
+  }
+
+  async function loadData(){
+    if(!API_URL){
+      state.deals = mock.deals;
+      state.logs  = mock.logs;
       return;
     }
-
-    // ROTEAMENTO PADRÃO (SIM / GANHOU / normais): Manhattan
-    const midX = Math.round((s.x + t.x) / 2);
-    const dPath = `M ${s.x} ${s.y}
-                   L ${midX} ${s.y}
-                   L ${midX} ${t.y}
-                   L ${t.x} ${t.y}`;
-
-    addPath(dPath, e.kind, active);
-
-    if(e.label){
-      addLabel(midX, Math.min(s.y, t.y) - 10, e.label);
-    }
-  });
-}
-
-async function loadData(){
-  if(!API_URL){
-    state.deals = mock.deals;
-    state.logs  = mock.logs;
-    return;
+    const r = await fetch(API_URL, { cache:"no-store" });
+    const data = await r.json();
+    state.deals = data.deals || [];
+    state.logs  = data.logs || [];
   }
-  const r = await fetch(API_URL, { cache:"no-store" });
-  const data = await r.json();
-  state.deals = data.deals || [];
-  state.logs  = data.logs || [];
-}
 
-function refresh(){
-  applyFilters();
-  renderDealSelect();
-  renderBoardMeta();
-  renderGrid();
-  const d = getDeal();
-  state.selectedNodeId = d?.current_node || "StartEvent_Lead";
-  renderSide();
-  requestAnimationFrame(()=> renderEdges());
-}
+  function refresh(){
+    applyFilters();
+    renderDealSelect();
+    renderBoardMeta();
+    renderGrid();
+    const d = getDeal();
+    state.selectedNodeId = d?.current_node || "StartEvent_Lead";
+    renderSide();
+    requestAnimationFrame(()=> renderEdges());
+  }
 
-function fitToView(){
-  const d = getDeal();
-  if(!d) return;
-  const gridWrap = $("#gridWrap");
-  const grid = $("#grid");
-  const el = grid.querySelector(`[data-node-id="${d.current_node}"]`);
-  if(!el) return;
-  const r = el.getBoundingClientRect();
-  const wr = gridWrap.getBoundingClientRect();
-  const dx = (r.left - wr.left) - (wr.width/2 - r.width/2);
-  const dy = (r.top  - wr.top ) - (wr.height/2 - r.height/2);
-  gridWrap.scrollLeft += dx;
-  gridWrap.scrollTop  += dy;
-}
+  function fitToView(){
+    const d = getDeal();
+    if(!d) return;
+    const gridWrap = $("#gridWrap");
+    const grid = $("#grid");
+    const el = grid.querySelector(`[data-node-id="${d.current_node}"]`);
+    if(!el) return;
+    const r = el.getBoundingClientRect();
+    const wr = gridWrap.getBoundingClientRect();
+    const dx = (r.left - wr.left) - (wr.width/2 - r.width/2);
+    const dy = (r.top  - wr.top ) - (wr.height/2 - r.height/2);
+    gridWrap.scrollLeft += dx;
+    gridWrap.scrollTop  += dy;
+  }
 
-function bind(){
-  $("#fIcp").addEventListener("change", e=>{ state.filters.icp = e.target.value; refresh(); });
-  $("#fTipo").addEventListener("change", e=>{ state.filters.tipo = e.target.value; refresh(); });
-  $("#search").addEventListener("input", e=>{ state.filters.q = e.target.value; refresh(); });
-  $("#dealSelect").addEventListener("change", e=>{ state.selectedDealId = e.target.value; refresh(); });
-  $("#reload").addEventListener("click", async ()=>{ await loadData(); refresh(); });
-  $("#fit").addEventListener("click", ()=>{ fitToView(); });
+  function bind(){
+    $("#fIcp").addEventListener("change", e=>{ state.filters.icp = e.target.value; refresh(); });
+    $("#fTipo").addEventListener("change", e=>{ state.filters.tipo = e.target.value; refresh(); });
+    $("#search").addEventListener("input", e=>{ state.filters.q = e.target.value; refresh(); });
+    $("#dealSelect").addEventListener("change", e=>{ state.selectedDealId = e.target.value; refresh(); });
+    $("#reload").addEventListener("click", async ()=>{ await loadData(); refresh(); });
+    $("#fit").addEventListener("click", ()=>{ fitToView(); });
 
-  const gridWrap = $("#gridWrap");
-  gridWrap.addEventListener("scroll", ()=>{ requestAnimationFrame(()=> renderEdges()); });
+    const gridWrap = $("#gridWrap");
+    gridWrap.addEventListener("scroll", ()=>{ requestAnimationFrame(()=> renderEdges()); });
 
-  const ro = new ResizeObserver(()=>{ requestAnimationFrame(()=> renderEdges()); });
-  ro.observe($("#grid"));
-  ro.observe($("#gridWrap"));
-}
+    const ro = new ResizeObserver(()=>{ requestAnimationFrame(()=> renderEdges()); });
+    ro.observe($("#grid"));
+    ro.observe($("#gridWrap"));
+  }
 
-(async function init(){
-  bind();
-  await loadData();
-  state.filters = { icp:"ALL", tipo:"ALL", q:"" };
-  refresh();
-  fitToView();
-})();
+  (async function init(){
+    bind();
+    await loadData();
+    state.filters = { icp:"ALL", tipo:"ALL", q:"" };
+    refresh();
+    fitToView();
+  })();
 </script>
 </body>
 </html>
