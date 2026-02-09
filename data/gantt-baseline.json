@@ -1,1 +1,30 @@
+{
+  "project": "Meu Projeto",
+  "tasks": [
+    {
+      "id": "T-001",
+      "name": "Kickoff",
+      "start": "2026-02-10",
+      "end": "2026-02-10",
+      "percent": 100,
+      "owner": "PMO",
+      "status": "Concluído",
+      "dependsOn": [],
+      "deadline": "2026-02-10"
+    },
+    {
+      "id": "T-002",
+      "name": "Levantamento",
+      "start": "2026-02-11",
+      "end": "2026-02-18",
+      "percent": 40,
+      "owner": "Funcional",
+      "status": "On track",
+      "dependsOn": [
+        "T-001"
+      ],
+      "deadline": "2026-02-18"
+    }
+  ]
+}
 
