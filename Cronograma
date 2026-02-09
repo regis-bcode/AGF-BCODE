@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Gantt — Projeto (Template)</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --panel:rgba(255,255,255,.06);
+      --panel2:rgba(255,255,255,.09);
+      --stroke:rgba(255,255,255,.12);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.65);
+      --accent:#63b3ff;
+      --good:#22c55e;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --rowH:42px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      background: radial-gradient(1200px 600px at 15% 0%, rgba(99,179,255,.22), transparent 60%),
+                  radial-gradient(900px 500px at 100% 20%, rgba(34,197,94,.16), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+    }
+    header{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(to bottom, rgba(11,16,32,.92), rgba(11,16,32,.65));
+      border-bottom:1px solid var(--stroke);
+    }
+    .topbar{
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+      padding:14px 16px;
+      max-width: 1600px;
+      margin:0 auto;
+    }
+    .brand{display:flex; flex-direction:column; gap:2px;}
+    .brand .title{font-size:15px; font-weight:700; letter-spacing:.2px}
+    .brand .sub{font-size:12px; color:var(--muted)}
+    .controls{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end;}
+    .btn{
+      appearance:none; border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      padding:9px 10px;
+      border-radius:10px;
+      font-weight:600;
+      font-size:12px;
+      cursor:pointer;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease;
+      display:inline-flex; gap:8px; align-items:center;
+      user-select:none;
+    }
+    .btn:hover{background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.18)}
+    .btn:active{transform: translateY(1px)}
+    .btn.primary{background: linear-gradient(135deg, rgba(99,179,255,.38), rgba(99,179,255,.14)); border-color: rgba(99,179,255,.35);}
+    .btn.danger{background: linear-gradient(135deg, rgba(239,68,68,.34), rgba(239,68,68,.12)); border-color: rgba(239,68,68,.28);}
+    .chip{
+      font-size:12px; color:var(--muted);
+      padding:7px 10px; border:1px solid var(--stroke);
+      border-radius:999px; background: rgba(255,255,255,.04);
+      display:flex; gap:8px; align-items:center;
+    }
+    .wrap{max-width: 1600px; margin: 0 auto; padding: 16px;}
+    .panel{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.04);
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow: 0 20px 55px rgba(0,0,0,.35);
+    }
+    .split{display:grid; grid-template-columns: 520px 1fr; min-height: 520px;}
+    @media (max-width: 1100px){ .split{grid-template-columns: 1fr} }
+    .left{
+      border-right:1px solid var(--stroke);
+      background: linear-gradient(to bottom, rgba(255,255,255,.04), rgba(255,255,255,.03));
+      display:flex; flex-direction:column;
+      min-width: 0;
+    }
+    .right{min-width: 0; position:relative; background: linear-gradient(to bottom, rgba(255,255,255,.03), rgba(255,255,255,.02));}
+
+    .gridHeader{position:sticky; top:0; z-index:10; background: rgba(12,16,32,.92); border-bottom:1px solid var(--stroke);}
+    .gridHeader .row, .gridBody .row{display:grid; grid-auto-flow: column; grid-auto-columns: minmax(80px, max-content); align-items:center;}
+    .gridHeader .row{height: 44px; font-size:12px; font-weight:700; color: rgba(255,255,255,.88);}
+    .gridBody{overflow:auto; max-height: calc(100vh - 180px);}
+    .gridBody .row{height: var(--rowH); border-bottom:1px solid rgba(255,255,255,.06); font-size:12px; color: rgba(255,255,255,.88);}
+    .gridBody .row:hover{background: rgba(255,255,255,.05)}
+    .cell{padding: 0 10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-right:1px solid rgba(255,255,255,.06); display:flex; align-items:center; gap:8px; min-width: 0;}
+    .cell.small{color:var(--muted)}
+
+    .status{display:inline-flex; align-items:center; gap:6px; padding: 4px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.05); font-weight:700; font-size:11px; width:max-content;}
+    .dot{width:8px; height:8px; border-radius:999px; background: var(--muted)}
+    .s-ok .dot{background: var(--good)}
+    .s-warn .dot{background: var(--warn)}
+    .s-bad .dot{background: var(--bad)}
+
+    .locked{position:sticky; left:0; z-index:5; background: rgba(12,16,32,.86); box-shadow: 8px 0 18px rgba(0,0,0,.25);} 
+    .gridHeader .locked{z-index:12}
+
+    .timelineTop{position:sticky; top:0; z-index:11; background: rgba(12,16,32,.92); border-bottom:1px solid var(--stroke); display:flex; align-items:center; justify-content:space-between; gap:10px; padding: 10px 12px;}
+    .timelineTop .meta{display:flex; gap:10px; align-items:center; flex-wrap:wrap; color: var(--muted); font-size:12px;}
+    .timeline{overflow:auto; max-height: calc(100vh - 180px); position:relative;}
+    .svgWrap{position:relative; min-width: 900px;}
+
+    .legend{display:flex; gap:10px; align-items:center; flex-wrap:wrap; color: var(--muted); font-size:12px;}
+    .legend span{display:inline-flex; gap:6px; align-items:center}
+    .sw{width:10px;height:10px;border-radius:3px;display:inline-block}
+    .sw.good{background: var(--good)}
+    .sw.warn{background: var(--warn)}
+    .sw.bad{background: var(--bad)}
+    .sw.accent{background: var(--accent)}
+
+    .modalBackdrop{position:fixed; inset:0; z-index:100; background: rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; padding:16px;}
+    .modal{width:min(720px, 100%); border:1px solid rgba(255,255,255,.16); background: rgba(12,16,32,.92); backdrop-filter: blur(12px); border-radius:16px; box-shadow: 0 30px 80px rgba(0,0,0,.55); overflow:hidden;}
+    .modalHead{padding: 14px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px; border-bottom:1px solid rgba(255,255,255,.10);}
+    .modalHead .h{font-weight:800}
+    .modalBody{padding: 14px 16px}
+    .cols{display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px;}
+    @media (max-width: 700px){.cols{grid-template-columns: 1fr}}
+    .chk{display:flex; gap:10px; align-items:center; padding: 10px 12px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.04); border-radius:12px; cursor:pointer; user-select:none;}
+    .chk input{accent-color: var(--accent)}
+    .hint{color:var(--muted); font-size:12px; line-height:1.35; margin-top:10px}
+    input[type="file"]{display:none}
+  </style>
+</head>
+<body>
+<header>
+  <div class="topbar">
+    <div class="brand">
+      <div class="title">Gantt — Cronograma (Template pronto para plugar seus dados)</div>
+      <div class="sub">Grid + Timeline, coluna “Atividade” travada, seletor de colunas, zoom, import JSON.</div>
+    </div>
+    <div class="controls">
+      <div class="chip" id="rangeChip">Range: —</div>
+      <button class="btn" id="zoomOutBtn">Zoom −</button>
+      <button class="btn" id="zoomInBtn">Zoom +</button>
+      <button class="btn" id="zoomFitBtn">Ajustar</button>
+      <button class="btn" id="colsBtn">Colunas</button>
+      <label class="btn primary" for="fileInput">Importar JSON</label>
+      <input id="fileInput" type="file" accept="application/json"/>
+      <button class="btn" id="exportBtn">Exportar PNG</button>
+      <button class="btn danger" id="resetBtn">Reset</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="split">
+      <section class="left">
+        <div class="gridHeader" id="gridHeader"></div>
+        <div class="gridBody" id="gridBody"></div>
+      </section>
+
+      <section class="right">
+        <div class="timelineTop">
+          <div class="meta">
+            <span id="zoomLabel">Zoom: Semana</span>
+            <span>•</span>
+            <span id="taskCount">Tarefas: —</span>
+          </div>
+          <div class="legend">
+            <span><i class="sw accent"></i> Barra</span>
+            <span><i class="sw good"></i> On track</span>
+            <span><i class="sw warn"></i> Em risco</span>
+            <span><i class="sw bad"></i> Atrasado</span>
+          </div>
+        </div>
+        <div class="timeline" id="timeline">
+          <div class="svgWrap" id="svgWrap"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div class="modalBackdrop" id="modalBackdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Selecionar colunas">
+    <div class="modalHead">
+      <div class="h">Selecionar colunas do Grid</div>
+      <button class="btn" id="closeModalBtn">Fechar</button>
+    </div>
+    <div class="modalBody">
+      <div class="cols" id="colsList"></div>
+      <div class="hint">
+        Dica operacional: mantenha “Atividade” sempre habilitada (é a âncora da leitura) e use as demais como “camadas de informação”
+        para reduzir ruído visual na governança diária (ritual de acompanhamento + status report).
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const defaultData = {
+  project: "Projeto (exemplo)",
+  tasks: [
+    { id:"T-001", name:"Onboarding & Kickoff", start:"2026-02-10", end:"2026-02-11", percent: 60, owner:"PMO", status:"On track", dependsOn:[], deadline:"2026-02-11" },
+    { id:"T-002", name:"Levantamento (MIT041)", start:"2026-02-12", end:"2026-02-18", percent: 25, owner:"Funcional", status:"Em risco", dependsOn:["T-001"], deadline:"2026-02-18" },
+    { id:"T-003", name:"Blueprint & Arquitetura", start:"2026-02-17", end:"2026-02-21", percent: 0, owner:"Tech Lead", status:"On track", dependsOn:["T-002"], deadline:"2026-02-21" },
+    { id:"T-004", name:"Parametrização (MIT043)", start:"2026-02-19", end:"2026-03-04", percent: 0, owner:"Consultoria", status:"On track", dependsOn:["T-002"], deadline:"2026-03-04" },
+    { id:"T-005", name:"Testes Key Users (MIT045)", start:"2026-03-05", end:"2026-03-12", percent: 0, owner:"Cliente", status:"On track", dependsOn:["T-004"], deadline:"2026-03-12" },
+    { id:"T-006", name:"Cutover / Plano de Virada (MIT054)", start:"2026-03-13", end:"2026-03-16", percent: 0, owner:"PMO", status:"On track", dependsOn:["T-005"], deadline:"2026-03-16" },
+    { id:"T-007", name:"Go-Live + Operação Assistida", start:"2026-03-17", end:"2026-03-28", percent: 0, owner:"Squad", status:"On track", dependsOn:["T-006"], deadline:"2026-03-28" }
+  ]
+};
+
+const COLS = [
+  { key:"id",         label:"ID",           width:90,  locked:false },
+  { key:"name",       label:"Atividade",     width:260, locked:true  },
+  { key:"owner",      label:"Responsável",   width:140, locked:false },
+  { key:"start",      label:"Início",        width:110, locked:false, fmt:"date" },
+  { key:"end",        label:"Fim",           width:110, locked:false, fmt:"date" },
+  { key:"duration",   label:"Duração",       width:100, locked:false, fmt:"dur"  },
+  { key:"percent",    label:"% Concl.",      width:95,  locked:false, fmt:"pct"  },
+  { key:"status",     label:"Status",        width:140, locked:false, fmt:"status" },
+  { key:"dependsOn",  label:"Predecessoras", width:150, locked:false, fmt:"deps" },
+  { key:"deadline",   label:"Prazo",         width:110, locked:false, fmt:"date" }
+];
+
+let visibleCols = new Set(COLS.map(c => c.key));
+visibleCols.add("name");
+let data = structuredClone(defaultData);
+
+const state = {
+  zoom: "week",
+  pxPerDay: 36,
+  rowH: 42,
+  today: new Date(),
+};
+
+function parseISO(s){
+  if(!s) return null;
+  const d = new Date(s + "T00:00:00");
+  return isNaN(d) ? null : d;
+}
+function fmtDate(d){
+  if(!d) return "—";
+  const dd = String(d.getDate()).padStart(2,"0");
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const yy = d.getFullYear();
+  return `${dd}/${mm}/${yy}`;
+}
+function daysBetween(a,b){
+  const ms = 24*60*60*1000;
+  const aa = Date.UTC(a.getFullYear(),a.getMonth(),a.getDate());
+  const bb = Date.UTC(b.getFullYear(),b.getMonth(),b.getDate());
+  return Math.round((bb-aa)/ms);
+}
+function addDays(d,n){
+  const x = new Date(d);
+  x.setDate(x.getDate()+n);
+  return x;
+}
+function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
+
+function deriveTaskFields(t){
+  const s = parseISO(t.start);
+  const e = parseISO(t.end);
+  const dur = (s && e) ? (daysBetween(s,e)+1) : null;
+  return { ...t, _s:s, _e:e, duration: dur };
+}
+function statusClass(status){
+  const s = (status||"").toLowerCase();
+  if(s.includes("concl")) return "s-ok";
+  if(s.includes("atr")) return "s-bad";
+  if(s.includes("ris")) return "s-warn";
+  return "s-ok";
+}
+
+function computeRange(tasks){
+  const parsed = tasks.map(deriveTaskFields).filter(t => t._s && t._e);
+  if(!parsed.length){
+    const now = new Date();
+    return {min: addDays(now,-7), max:addDays(now,21)};
+  }
+  let min = parsed[0]._s, max = parsed[0]._e;
+  parsed.forEach(t => { if(t._s < min) min=t._s; if(t._e > max) max=t._e; });
+  min = addDays(min, -3);
+  max = addDays(max,  7);
+  return {min, max};
+}
+
+function setZoom(mode){
+  state.zoom = mode;
+  if(mode==="day")   state.pxPerDay = 72;
+  if(mode==="week")  state.pxPerDay = 36;
+  if(mode==="month") state.pxPerDay = 18;
+  document.getElementById("zoomLabel").textContent = "Zoom: " + (mode==="day" ? "Dia" : mode==="week" ? "Semana" : "Mês");
+  renderAll();
+}
+
+function renderGrid(){
+  const header = document.getElementById("gridHeader");
+  const body = document.getElementById("gridBody");
+  header.innerHTML = "";
+  body.innerHTML = "";
+
+  const cols = COLS.filter(c => visibleCols.has(c.key));
+
+  const hrow = document.createElement("div");
+  hrow.className = "row";
+  cols.forEach(c => {
+    const cell = document.createElement("div");
+    cell.className = "cell" + (c.locked ? " locked" : "");
+    cell.style.width = c.width + "px";
+    cell.title = c.label;
+    cell.textContent = c.label;
+    hrow.appendChild(cell);
+  });
+  header.appendChild(hrow);
+
+  const tasks = data.tasks.map(deriveTaskFields);
+  tasks.forEach(t => {
+    const row = document.createElement("div");
+    row.className = "row";
+    cols.forEach(c => {
+      const cell = document.createElement("div");
+      cell.className = "cell" + (c.locked ? " locked" : "");
+      cell.style.width = c.width + "px";
+      let val = t[c.key];
+      if(c.fmt==="date") val = fmtDate(parseISO(val));
+      if(c.fmt==="dur")  val = (t.duration ?? "—") + (t.duration ? " d" : "");
+      if(c.fmt==="pct")  val = (t.percent ?? 0) + "%";
+      if(c.fmt==="deps") val = (Array.isArray(t.dependsOn) ? t.dependsOn.join(", ") : (t.dependsOn||"—")) || "—";
+      if(c.fmt==="status"){
+        const st = document.createElement("span");
+        st.className = "status " + statusClass(t.status);
+        const dot = document.createElement("i");
+        dot.className = "dot";
+        const txt = document.createElement("span");
+        txt.textContent = (t.status || "—");
+        st.appendChild(dot); st.appendChild(txt);
+        cell.appendChild(st);
+        row.appendChild(cell);
+        return;
+      }
+      cell.textContent = (val ?? "—");
+      row.appendChild(cell);
+    });
+    body.appendChild(row);
+  });
+}
+
+function renderTimeline(){
+  const wrap = document.getElementById("svgWrap");
+  wrap.innerHTML = "";
+
+  const tasks = data.tasks.map(deriveTaskFields);
+  const {min, max} = computeRange(tasks);
+
+  document.getElementById("taskCount").textContent = "Tarefas: " + tasks.length;
+  document.getElementById("rangeChip").textContent = "Range: " + fmtDate(min) + " → " + fmtDate(max);
+
+  const totalDays = Math.max(1, daysBetween(min, max) + 1);
+  const W = totalDays * state.pxPerDay;
+  const H = Math.max(1, tasks.length) * state.rowH + 46;
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("width", W);
+  svg.setAttribute("height", H);
+  svg.style.display = "block";
+
+  const bg = document.createElementNS(svg.namespaceURI,"rect");
+  bg.setAttribute("x", 0); bg.setAttribute("y", 0);
+  bg.setAttribute("width", W); bg.setAttribute("height", H);
+  bg.setAttribute("fill", "rgba(255,255,255,0.01)");
+  svg.appendChild(bg);
+
+  const headerH = 36;
+  const headerBg = document.createElementNS(svg.namespaceURI,"rect");
+  headerBg.setAttribute("x", 0); headerBg.setAttribute("y", 0);
+  headerBg.setAttribute("width", W); headerBg.setAttribute("height", headerH);
+  headerBg.setAttribute("fill", "rgba(255,255,255,0.02)");
+  svg.appendChild(headerBg);
+
+  for(let d=0; d<totalDays; d++){
+    const x = d * state.pxPerDay;
+    const dt = addDays(min, d);
+    const day = dt.getDay();
+    const isWeekend = (day===0 || day===6);
+    if(isWeekend){
+      const r = document.createElementNS(svg.namespaceURI,"rect");
+      r.setAttribute("x", x);
+      r.setAttribute("y", headerH);
+      r.setAttribute("width", state.pxPerDay);
+      r.setAttribute("height", H-headerH);
+      r.setAttribute("fill", "rgba(255,255,255,0.035)");
+      svg.appendChild(r);
+    }
+    const line = document.createElementNS(svg.namespaceURI,"line");
+    line.setAttribute("x1", x); line.setAttribute("y1", 0);
+    line.setAttribute("x2", x); line.setAttribute("y2", H);
+    line.setAttribute("stroke", "rgba(255,255,255,0.06)");
+    line.setAttribute("stroke-width", 1);
+    svg.appendChild(line);
+
+    const labelEvery = state.zoom==="day" ? 1 : state.zoom==="week" ? 2 : 5;
+    if(d % labelEvery === 0){
+      const tx = document.createElementNS(svg.namespaceURI,"text");
+      tx.setAttribute("x", x + 4);
+      tx.setAttribute("y", 22);
+      tx.setAttribute("fill", "rgba(255,255,255,0.75)");
+      tx.setAttribute("font-size", "11");
+      tx.textContent = dt.getDate().toString().padStart(2,"0") + "/" + (dt.getMonth()+1).toString().padStart(2,"0");
+      svg.appendChild(tx);
+    }
+  }
+
+  for(let i=0; i<=tasks.length; i++){
+    const y = headerH + i*state.rowH;
+    const line = document.createElementNS(svg.namespaceURI,"line");
+    line.setAttribute("x1", 0); line.setAttribute("y1", y);
+    line.setAttribute("x2", W); line.setAttribute("y2", y);
+    line.setAttribute("stroke", "rgba(255,255,255,0.06)");
+    line.setAttribute("stroke-width", 1);
+    svg.appendChild(line);
+  }
+
+  const todayX = (daysBetween(min, state.today)) * state.pxPerDay + state.pxPerDay/2;
+  if(todayX >= 0 && todayX <= W){
+    const tline = document.createElementNS(svg.namespaceURI,"line");
+    tline.setAttribute("x1", todayX); tline.setAttribute("y1", headerH);
+    tline.setAttribute("x2", todayX); tline.setAttribute("y2", H);
+    tline.setAttribute("stroke", "rgba(99,179,255,0.9)");
+    tline.setAttribute("stroke-width", 2);
+    svg.appendChild(tline);
+
+    const pill = document.createElementNS(svg.namespaceURI,"rect");
+    pill.setAttribute("x", clamp(todayX-34, 4, W-68));
+    pill.setAttribute("y", 6);
+    pill.setAttribute("width", 68);
+    pill.setAttribute("height", 18);
+    pill.setAttribute("rx", 9);
+    pill.setAttribute("fill", "rgba(99,179,255,0.18)");
+    pill.setAttribute("stroke", "rgba(99,179,255,0.35)");
+    svg.appendChild(pill);
+
+    const tx = document.createElementNS(svg.namespaceURI,"text");
+    tx.setAttribute("x", clamp(todayX-34, 4, W-68) + 10);
+    tx.setAttribute("y", 19);
+    tx.setAttribute("fill", "rgba(255,255,255,0.9)");
+    tx.setAttribute("font-size", "11");
+    tx.setAttribute("font-weight", "700");
+    tx.textContent = "Hoje";
+    svg.appendChild(tx);
+  }
+
+  const barYPad = 10, barH = state.rowH - barYPad*2;
+  tasks.forEach((t, i) => {
+    const y = headerH + i*state.rowH + barYPad;
+    if(!t._s || !t._e) return;
+    const x1 = daysBetween(min, t._s) * state.pxPerDay;
+    const x2 = (daysBetween(min, t._e)+1) * state.pxPerDay;
+    const w = Math.max(6, x2-x1);
+
+    const sc = statusClass(t.status);
+    const base = sc==="s-bad" ? "rgba(239,68,68,0.80)" : sc==="s-warn" ? "rgba(245,158,11,0.80)" : "rgba(34,197,94,0.78)";
+    const stroke = sc==="s-bad" ? "rgba(239,68,68,0.95)" : sc==="s-warn" ? "rgba(245,158,11,0.95)" : "rgba(34,197,94,0.90)";
+
+    const bar = document.createElementNS(svg.namespaceURI,"rect");
+    bar.setAttribute("x", x1+2); bar.setAttribute("y", y);
+    bar.setAttribute("width", w-4); bar.setAttribute("height", barH);
+    bar.setAttribute("rx", 8);
+    bar.setAttribute("fill", "rgba(99,179,255,0.20)");
+    bar.setAttribute("stroke", "rgba(99,179,255,0.35)");
+    svg.appendChild(bar);
+
+    const statusOverlay = document.createElementNS(svg.namespaceURI,"rect");
+    statusOverlay.setAttribute("x", x1+2); statusOverlay.setAttribute("y", y);
+    statusOverlay.setAttribute("width", w-4); statusOverlay.setAttribute("height", barH);
+    statusOverlay.setAttribute("rx", 8);
+    statusOverlay.setAttribute("fill", base);
+    statusOverlay.setAttribute("opacity", "0.55");
+    svg.appendChild(statusOverlay);
+
+    const pct = clamp(Number(t.percent||0),0,100);
+    const pw = (w-4) * (pct/100);
+    const prog = document.createElementNS(svg.namespaceURI,"rect");
+    prog.setAttribute("x", x1+2); prog.setAttribute("y", y);
+    prog.setAttribute("width", Math.max(0, pw)); prog.setAttribute("height", barH);
+    prog.setAttribute("rx", 8);
+    prog.setAttribute("fill", base);
+    prog.setAttribute("stroke", stroke);
+    svg.appendChild(prog);
+
+    const label = document.createElementNS(svg.namespaceURI,"text");
+    label.setAttribute("x", x1 + 10);
+    label.setAttribute("y", y + barH/2 + 4);
+    label.setAttribute("fill", "rgba(255,255,255,0.92)");
+    label.setAttribute("font-size", "11");
+    label.setAttribute("font-weight", "700");
+    label.textContent = `${t.id} • ${t.name}`;
+    svg.appendChild(label);
+
+    const title = document.createElementNS(svg.namespaceURI,"title");
+    title.textContent =
+      `${t.id} — ${t.name}\n` +
+      `Início: ${fmtDate(t._s)} | Fim: ${fmtDate(t._e)} | Duração: ${t.duration}d\n` +
+      `%: ${pct}% | Resp.: ${t.owner||"—"} | Status: ${t.status||"—"}\n` +
+      `Prazo: ${fmtDate(parseISO(t.deadline))} | Predecessoras: ${(t.dependsOn||[]).join(", ")||"—"}`;
+    bar.appendChild(title);
+    prog.appendChild(title.cloneNode(true));
+    statusOverlay.appendChild(title.cloneNode(true));
+  });
+
+  wrap.appendChild(svg);
+
+  const gridBody = document.getElementById("gridBody");
+  const timeline = document.getElementById("timeline");
+  timeline.onscroll = () => { gridBody.scrollTop = timeline.scrollTop; };
+  gridBody.onscroll = () => { timeline.scrollTop = gridBody.scrollTop; };
+}
+
+function renderColumnPicker(){
+  const list = document.getElementById("colsList");
+  list.innerHTML = "";
+  COLS.forEach(c => {
+    const lab = document.createElement("label");
+    lab.className = "chk";
+    const inp = document.createElement("input");
+    inp.type = "checkbox";
+    inp.checked = visibleCols.has(c.key);
+    inp.disabled = (c.key==="name");
+    const txt = document.createElement("div");
+    txt.style.display="flex";
+    txt.style.flexDirection="column";
+    txt.style.gap="2px";
+    const t1 = document.createElement("div");
+    t1.style.fontWeight="800";
+    t1.textContent = c.label + (c.key==="name" ? " (travada)" : "");
+    const t2 = document.createElement("div");
+    t2.style.fontSize="12px";
+    t2.style.color="rgba(255,255,255,.65)";
+    t2.textContent = "Largura: " + c.width + "px";
+    txt.appendChild(t1); txt.appendChild(t2);
+    lab.appendChild(inp); lab.appendChild(txt);
+    inp.addEventListener("change", () => {
+      if(inp.checked) visibleCols.add(c.key); else visibleCols.delete(c.key);
+      renderGrid();
+    });
+    list.appendChild(lab);
+  });
+}
+
+function openModal(){
+  const bd = document.getElementById("modalBackdrop");
+  bd.style.display="flex";
+  bd.setAttribute("aria-hidden","false");
+  renderColumnPicker();
+}
+function closeModal(){
+  const bd = document.getElementById("modalBackdrop");
+  bd.style.display="none";
+  bd.setAttribute("aria-hidden","true");
+}
+
+function renderAll(){ renderGrid(); renderTimeline(); }
+
+// Actions
+
+document.getElementById("colsBtn").addEventListener("click", openModal);
+document.getElementById("closeModalBtn").addEventListener("click", closeModal);
+document.getElementById("modalBackdrop").addEventListener("click", (e) => {
+  if(e.target.id === "modalBackdrop") closeModal();
+});
+
+document.getElementById("zoomInBtn").addEventListener("click", () => {
+  if(state.zoom==="month") setZoom("week");
+  else if(state.zoom==="week") setZoom("day");
+});
+document.getElementById("zoomOutBtn").addEventListener("click", () => {
+  if(state.zoom==="day") setZoom("week");
+  else if(state.zoom==="week") setZoom("month");
+});
+
+document.getElementById("zoomFitBtn").addEventListener("click", () => {
+  const tasks = data.tasks.map(deriveTaskFields);
+  const {min,max} = computeRange(tasks);
+  const days = daysBetween(min,max)+1;
+  const viewport = document.getElementById("timeline").clientWidth || 900;
+  const px = viewport / days;
+  if(px >= 55) setZoom("day");
+  else if(px >= 26) setZoom("week");
+  else setZoom("month");
+});
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  data = structuredClone(defaultData);
+  visibleCols = new Set(COLS.map(c => c.key));
+  visibleCols.add("name");
+  setZoom("week");
+});
+
+document.getElementById("fileInput").addEventListener("change", async (e) => {
+  const f = e.target.files?.[0];
+  if(!f) return;
+  try{
+    const txt = await f.text();
+    const obj = JSON.parse(txt);
+    if(!obj || !Array.isArray(obj.tasks)) throw new Error("JSON inválido: esperado { tasks: [...] }");
+    data = obj;
+    renderAll();
+  }catch(err){
+    alert("Falha ao importar JSON: " + (err?.message || err));
+  }finally{
+    e.target.value = "";
+  }
+});
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const svg = document.querySelector("#svgWrap svg");
+  if(!svg){ alert("Nada para exportar."); return; }
+  const xml = new XMLSerializer().serializeToString(svg);
+  const svgBlob = new Blob([xml], {type:"image/svg+xml;charset=utf-8"});
+  const url = URL.createObjectURL(svgBlob);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = svg.width.baseVal.value;
+    canvas.height = svg.height.baseVal.value;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#0b1020";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img,0,0);
+    URL.revokeObjectURL(url);
+    canvas.toBlob((blob) => {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "gantt.png";
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+    }, "image/png");
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    alert("Falha ao exportar.");
+  };
+  img.src = url;
+});
+
+setZoom("week");
+</script>
+</body>
+</html>
